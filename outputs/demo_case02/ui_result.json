@@ -1,6 +1,6 @@
 {
   "job_id": "demo_case02",
-  "generated_at_utc": "2026-11-11T15:29:33.158355+00:00",
+  "generated_at_utc": "2026-11-11T16:58:33.378310+00:00",
   "medical_disclaimer": "ScanSure AI is an experimental AI-assisted ultrasound image enhancement and analysis tool. It does not provide a medical diagnosis. All findings require review by a qualified radiologist.",
   "input_video": {
     "filename": "breast_ultrasound_multifocal_case02.mp4",
@@ -36,7 +36,7 @@
     "requested_device": "auto",
     "executed_device": "cpu"
   },
-  "processing_duration_sec": 33.555,
+  "processing_duration_sec": 36.081,
   "model_metadata": {
     "model_name": "ScanSure-UNet-Lite-v1.2-BreastUS",
     "model_version": "1.2.0-busi-calibrated",
@@ -78,6 +78,8 @@
     "peak_raw_confidence": 0.9402,
     "peak_confidence_frame": 38,
     "validated_threshold": 0.55,
+    "annotated_images_generated": 12,
+    "target_workflow": "Remote Radiologist Review for Rural Healthcare Workers (Low-Cost Portable Ultrasound)",
     "confidence_disclosure": "Reported scores are raw uncalibrated segmentation model scores, NOT calibrated clinical probabilities. Findings scoring between the validated threshold and 0.72 are flagged as 'Uncertain \u2014 Requires Radiologist Review'.",
     "clinical_recommendation": "Uncertain \u2014 Requires Radiologist Review."
   },
@@ -118,7 +120,7 @@
         "fps": 15.0,
         "duration_sec": 3.0,
         "resolution": "320x240",
-        "file_size_mb": 0.759
+        "file_size_mb": 0.757
       },
       "comparison_video": {
         "filename": "comparison_video.mp4",
@@ -126,7 +128,7 @@
         "fps": 15.0,
         "duration_sec": 3.0,
         "resolution": "640x240",
-        "file_size_mb": 1.894
+        "file_size_mb": 1.896
       }
     },
     "discrepancy_notes": []
@@ -155,50 +157,151 @@
       "json": {
         "filename": "detection_report.json",
         "url": "/api/outputs/demo_case02/detection_report.json",
-        "path": "/app/applet/outputs/demo_case02/detection_report.json"
+        "path": "outputs/demo_case02/detection_report.json"
       },
       "csv": {
         "filename": "detection_report.csv",
         "url": "/api/outputs/demo_case02/detection_report.csv",
-        "path": "/app/applet/outputs/demo_case02/detection_report.csv"
+        "path": "outputs/demo_case02/detection_report.csv"
+      },
+      "pdf": {
+        "filename": "radiologist_clinical_report.pdf",
+        "url": "/api/outputs/demo_case02/radiologist_clinical_report.pdf",
+        "path": "outputs/demo_case02/radiologist_clinical_report.pdf"
       }
     },
     "annotated_png_frames": [
       {
-        "frame_number": 0,
-        "timestamp_sec": 0.0,
-        "label": "Frame #0 (0.00s) \u2014 Peak Score 0.94",
-        "filename": "frame_0000_annotated.png",
-        "url": "/api/outputs/demo_case02/frames/frame_0000_annotated.png",
-        "comparison_filename": "frame_0000_comparison.png",
-        "comparison_url": "/api/outputs/demo_case02/frames/frame_0000_comparison.png"
+        "frame_number": 38,
+        "timestamp_sec": 2.5333,
+        "label": "Frame #38 (2.53s) \u2014 Confidence 94.0%",
+        "filename": "frame_0038_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0038_annotated.png",
+        "comparison_filename": "frame_0038_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0038_comparison.png",
+        "max_confidence": 0.9402,
+        "detection_count": 2
       },
       {
-        "frame_number": 7,
-        "timestamp_sec": 0.4667,
-        "label": "Frame #7 (0.47s) \u2014 Peak Score 0.94",
-        "filename": "frame_0007_annotated.png",
-        "url": "/api/outputs/demo_case02/frames/frame_0007_annotated.png",
-        "comparison_filename": "frame_0007_comparison.png",
-        "comparison_url": "/api/outputs/demo_case02/frames/frame_0007_comparison.png"
+        "frame_number": 40,
+        "timestamp_sec": 2.6667,
+        "label": "Frame #40 (2.67s) \u2014 Confidence 93.9%",
+        "filename": "frame_0040_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0040_annotated.png",
+        "comparison_filename": "frame_0040_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0040_comparison.png",
+        "max_confidence": 0.9393,
+        "detection_count": 2
       },
       {
-        "frame_number": 28,
-        "timestamp_sec": 1.8667,
-        "label": "Frame #28 (1.87s) \u2014 Peak Score 0.94",
-        "filename": "frame_0028_annotated.png",
-        "url": "/api/outputs/demo_case02/frames/frame_0028_annotated.png",
-        "comparison_filename": "frame_0028_comparison.png",
-        "comparison_url": "/api/outputs/demo_case02/frames/frame_0028_comparison.png"
+        "frame_number": 13,
+        "timestamp_sec": 0.8667,
+        "label": "Frame #13 (0.87s) \u2014 Confidence 93.9%",
+        "filename": "frame_0013_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0013_annotated.png",
+        "comparison_filename": "frame_0013_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0013_comparison.png",
+        "max_confidence": 0.9392,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 2,
+        "timestamp_sec": 0.1333,
+        "label": "Frame #2 (0.13s) \u2014 Confidence 93.8%",
+        "filename": "frame_0002_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0002_annotated.png",
+        "comparison_filename": "frame_0002_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0002_comparison.png",
+        "max_confidence": 0.9384,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 26,
+        "timestamp_sec": 1.7333,
+        "label": "Frame #26 (1.73s) \u2014 Confidence 93.8%",
+        "filename": "frame_0026_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0026_annotated.png",
+        "comparison_filename": "frame_0026_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0026_comparison.png",
+        "max_confidence": 0.9383,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 37,
+        "timestamp_sec": 2.4667,
+        "label": "Frame #37 (2.47s) \u2014 Confidence 93.8%",
+        "filename": "frame_0037_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0037_annotated.png",
+        "comparison_filename": "frame_0037_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0037_comparison.png",
+        "max_confidence": 0.9381,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 6,
+        "timestamp_sec": 0.4,
+        "label": "Frame #6 (0.40s) \u2014 Confidence 93.8%",
+        "filename": "frame_0006_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0006_annotated.png",
+        "comparison_filename": "frame_0006_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0006_comparison.png",
+        "max_confidence": 0.938,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 1,
+        "timestamp_sec": 0.0667,
+        "label": "Frame #1 (0.07s) \u2014 Confidence 93.8%",
+        "filename": "frame_0001_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0001_annotated.png",
+        "comparison_filename": "frame_0001_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0001_comparison.png",
+        "max_confidence": 0.9379,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 8,
+        "timestamp_sec": 0.5333,
+        "label": "Frame #8 (0.53s) \u2014 Confidence 93.8%",
+        "filename": "frame_0008_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0008_annotated.png",
+        "comparison_filename": "frame_0008_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0008_comparison.png",
+        "max_confidence": 0.9376,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 39,
+        "timestamp_sec": 2.6,
+        "label": "Frame #39 (2.60s) \u2014 Confidence 93.7%",
+        "filename": "frame_0039_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0039_annotated.png",
+        "comparison_filename": "frame_0039_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0039_comparison.png",
+        "max_confidence": 0.9374,
+        "detection_count": 2
       },
       {
         "frame_number": 30,
         "timestamp_sec": 2.0,
-        "label": "Frame #30 (2.00s) \u2014 Peak Score 0.94",
+        "label": "Frame #30 (2.00s) \u2014 Confidence 93.7%",
         "filename": "frame_0030_annotated.png",
         "url": "/api/outputs/demo_case02/frames/frame_0030_annotated.png",
         "comparison_filename": "frame_0030_comparison.png",
-        "comparison_url": "/api/outputs/demo_case02/frames/frame_0030_comparison.png"
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0030_comparison.png",
+        "max_confidence": 0.9373,
+        "detection_count": 2
+      },
+      {
+        "frame_number": 3,
+        "timestamp_sec": 0.2,
+        "label": "Frame #3 (0.20s) \u2014 Confidence 93.7%",
+        "filename": "frame_0003_annotated.png",
+        "url": "/api/outputs/demo_case02/frames/frame_0003_annotated.png",
+        "comparison_filename": "frame_0003_comparison.png",
+        "comparison_url": "/api/outputs/demo_case02/frames/frame_0003_comparison.png",
+        "max_confidence": 0.9372,
+        "detection_count": 2
       }
     ]
   },

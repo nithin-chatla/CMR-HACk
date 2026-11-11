@@ -218,6 +218,7 @@ async function startServer() {
         temporal_smoothing = true,
         output_resolution = 'original',
         device = 'auto',
+        top_k_frames = 12,
       } = req.body;
 
       if (!filepath || !fs.existsSync(filepath)) {
@@ -259,6 +260,8 @@ async function startServer() {
         String(output_resolution),
         '--device',
         String(device),
+        '--top-k-frames',
+        String(Math.max(1, Math.min(12, Number(top_k_frames) || 12))),
       ];
 
       const child = spawn('python3', args, {

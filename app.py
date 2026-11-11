@@ -40,6 +40,7 @@ def run_ultrasound_pipeline(
     temporal_smoothing: bool = True,
     output_resolution: str = "original",
     device: str = "auto",
+    top_k_frames: int = 12,
     progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     """
@@ -211,23 +212,25 @@ def run_ultrasound_pipeline(
             }
         )
 
-        # Retain up to 4 representative keyframes (first frame, midpoint, peak finding frames)
-        if idx in (0, total_frames // 3, (2 * total_frames) // 3, total_frames - 1) or (
-            serialized_dets and len(keyframe_candidates) < 6 and idx % 7 == 0
-        ):
-            comp_rgb = build_side_by_side_frame(
-                orig_gray, annotated_rgb, target_w, target_h, idx, ts_sec
-            )
-            keyframe_candidates.append(
-                {
-                    "frame_number": idx,
-                    "timestamp_sec": ts_sec,
-                    "max_confidence": max_conf,
-                    "detection_count": len(serialized_dets),
-                    "annotated_rgb": bytes(annotated_rgb),
-                    "comparison_rgb": bytes(comp_rgb),
-                }
-            )
+        # Retain candidate keyframes across the sequence for highest-confidence ranking
+        stride = max(1, total_frames // 16)
+        if idx % stride == 0 or serialized_dets:
+            if len(keyframe_candidates) < 24 or max_conf > min(
+                (c["max_confidence"] for c in keyframe_candidates), default=0.0
+            ):
+                comp_rgb = build_side_by_side_frame(
+                    orig_gray, annotated_rgb, target_w, target_h, idx, ts_sec
+                )
+                keyframe_candidates.append(
+                    {
+                        "frame_number": idx,
+                        "timestamp_sec": ts_sec,
+                        "max_confidence": max_conf,
+                        "detection_count": len(serialized_dets),
+                        "annotated_rgb": bytes(annotated_rgb),
+                        "comparison_rgb": bytes(comp_rgb),
+                    }
+                )
 
         if idx % 3 == 0 or idx == total_frames - 1:
             pct = 10.0 + 78.0 * ((idx + 1) / float(total_frames))
@@ -246,12 +249,13 @@ def run_ultrasound_pipeline(
     )
     video_outputs = writer.close()
 
-    # Select top 4 keyframes to export as PNGs
+    # Select top K keyframes sorted by highest confidence score
+    safe_top_k = max(1, min(12, int(top_k_frames)))
     keyframe_candidates.sort(
-        key=lambda k: (1 if k["frame_number"] == 0 else 0, k["max_confidence"]),
+        key=lambda k: (k["max_confidence"], k["detection_count"], -k["frame_number"]),
         reverse=True,
     )
-    selected_kf = sorted(keyframe_candidates[:4], key=lambda k: k["frame_number"])
+    selected_kf = keyframe_candidates[:safe_top_k]
     for kf in selected_kf:
         f_num = kf["frame_number"]
         ann_fname = f"frame_{f_num:04d}_annotated.png"
@@ -261,7 +265,7 @@ def run_ultrasound_pipeline(
         save_rgb_png(ann_fpath, kf["annotated_rgb"], target_w, target_h)
         save_rgb_png(cmp_fpath, kf["comparison_rgb"], target_w * 2, target_h)
         lbl = (
-            f"Frame #{f_num} ({kf['timestamp_sec']:.2f}s) — Peak Score {kf['max_confidence']:.2f}"
+            f"Frame #{f_num} ({kf['timestamp_sec']:.2f}s) — Confidence {kf['max_confidence']*100:.1f}%"
             if kf["detection_count"] > 0
             else f"Frame #{f_num} ({kf['timestamp_sec']:.2f}s) — Baseline Enhanced"
         )
@@ -379,6 +383,7 @@ def main() -> None:
     parser.add_argument("--temporal-smoothing", type=str, default="true", help="Enable temporal detection tracking")
     parser.add_argument("--resolution", type=str, default="original", help="Output resolution (original or WxH)")
     parser.add_argument("--device", type=str, default="auto", help="Processing device (auto/cpu/gpu)")
+    parser.add_argument("--top-k-frames", type=int, default=12, help="Number of highest-confidence keyframes to export")
 
     args = parser.parse_args()
 
@@ -416,6 +421,7 @@ def main() -> None:
             temporal_smoothing=(args.temporal_smoothing.lower() == "true"),
             output_resolution=args.resolution,
             device=args.device,
+            top_k_frames=args.top_k_frames,
         )
         print(json.dumps(res, indent=2))
         return

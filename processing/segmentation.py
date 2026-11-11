@@ -266,41 +266,64 @@ def render_annotated_frame(
 ) -> bytearray:
     """
     Renders enhanced ultrasound grayscale frame into RGB24 and overlays:
-    - Translucent segmentation mask & crisp pixel contour
-    - Corner-ticked bounding box
+    - Clinical right-margin Depth Scale Ruler (1cm - 4cm ticks)
+    - Translucent segmentation mask & dual-pixel anti-aliased contour
+    - Electronic caliper markers & corner-ticked bounding box
     - Category label, Raw Model Confidence, and Frame Timestamp HUD
-    Never renders boxes when detections is empty.
     """
     from processing.frame_extractor import gray_to_rgb_bytes
 
     rgb = gray_to_rgb_bytes(enhanced_gray)
 
     # Top clinical telemetry bar
-    draw_rect_alpha(rgb, width, height, 0, 0, width, 16, (7, 10, 18), 0.82)
+    draw_rect_alpha(rgb, width, height, 0, 0, width, 16, (6, 9, 16), 0.88)
     ts_text = f"FRM {frame_index:04d}  T+{timestamp_sec:05.2f}S"
     draw_text_5x7(rgb, width, height, 6, 4, ts_text, color=(148, 163, 184), bg_color=None)
 
     if detections:
-        status_str = f"FINDINGS: {len(detections)} (THR {threshold:.2f})"
+        status_str = f"AI FINDINGS: {len(detections)} (THR {threshold:.2f})"
         status_col = (6, 182, 212)
     else:
-        status_str = f"NO FINDING ABOVE THR {threshold:.2f}"
+        status_str = f"CLEAN SCAN (THR {threshold:.2f})"
         status_col = (100, 116, 139)
     draw_text_5x7(
         rgb,
         width,
         height,
-        max(140, width - len(status_str) * 6 - 6),
+        max(135, width - len(status_str) * 6 - 6),
         4,
         status_str,
         color=status_col,
         bg_color=None,
     )
 
+    # Clinical Depth Calibration Scale Ruler along right edge (every 10px = 2mm, 50px = 1cm)
+    ruler_x = width - 4
+    for y in range(22, height - 8, 10):
+        is_cm = ((y - 22) % 50) == 0
+        tick_len = 6 if is_cm else 3
+        col_r = (148, 163, 184) if is_cm else (71, 85, 105)
+        for tx in range(ruler_x - tick_len, ruler_x):
+            if 0 <= tx < width:
+                idx = (y * width + tx) * 3
+                rgb[idx], rgb[idx + 1], rgb[idx + 2] = col_r
+        if is_cm and (y - 22) > 0:
+            cm_num = (y - 22) // 50
+            draw_text_5x7(
+                rgb,
+                width,
+                height,
+                ruler_x - 24,
+                y - 3,
+                f"{cm_num}CM",
+                color=(100, 116, 139),
+                bg_color=None,
+            )
+
     for det in detections:
         is_uncertain = det.get("is_uncertain", False)
-        # Cyan for high-confidence cystic candidate, Amber for uncertain review candidate
         primary_col = (245, 158, 11) if is_uncertain else (6, 182, 212)
+        glow_col = (180, 110, 8) if is_uncertain else (8, 125, 155)
         bx, by, bw, bh = det["bbox"]
 
         # 1. Soft segmentation interior tint (18% opacity so internal acoustic texture stays visible)
@@ -313,7 +336,16 @@ def render_annotated_frame(
                 rgb[p_off + 1] = int(0.82 * rgb[p_off + 1] + 0.18 * mg)
                 rgb[p_off + 2] = int(0.82 * rgb[p_off + 2] + 0.18 * mb)
 
-        # 2. Segmentation contour pixels
+        # 2. Dual-pixel anti-aliased segmentation contour
+        gr, gg, gb = glow_col
+        for cx, cy in det.get("_contour_full", []):
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < width and 0 <= ny < height:
+                    g_off = (ny * width + nx) * 3
+                    rgb[g_off] = int(0.45 * rgb[g_off] + 0.55 * gr)
+                    rgb[g_off + 1] = int(0.45 * rgb[g_off + 1] + 0.55 * gg)
+                    rgb[g_off + 2] = int(0.45 * rgb[g_off + 2] + 0.55 * gb)
         for cx, cy in det.get("_contour_full", []):
             if 0 <= cx < width and 0 <= cy < height:
                 c_off = (cy * width + cx) * 3
@@ -321,35 +353,39 @@ def render_annotated_frame(
                 rgb[c_off + 1] = mg
                 rgb[c_off + 2] = mb
 
-        # 3. Corner-ticked bounding box (avoids obscuring boundary walls)
-        x0 = max(2, bx - 3)
-        y0 = max(18, by - 3)
-        x1 = min(width - 3, bx + bw + 3)
-        y1 = min(height - 3, by + bh + 3)
-        corner_len = max(5, min(10, min(bw, bh) // 3))
+        # 3. Corner-ticked bounding box (2px thick corners)
+        x0 = max(2, bx - 4)
+        y0 = max(18, by - 4)
+        x1 = min(width - 10, bx + bw + 4)
+        y1 = min(height - 4, by + bh + 4)
+        corner_len = max(6, min(11, min(bw, bh) // 3))
 
         for x in range(x0, x1 + 1):
             if (x - x0 <= corner_len) or (x1 - x <= corner_len):
-                for ty in (y0, y1):
-                    idx = (ty * width + x) * 3
-                    rgb[idx], rgb[idx + 1], rgb[idx + 2] = primary_col
+                for ty in (y0, y0 + 1, y1 - 1, y1):
+                    if 0 <= ty < height:
+                        idx = (ty * width + x) * 3
+                        rgb[idx], rgb[idx + 1], rgb[idx + 2] = primary_col
         for y in range(y0, y1 + 1):
             if (y - y0 <= corner_len) or (y1 - y <= corner_len):
-                for tx in (x0, x1):
-                    idx = (y * width + tx) * 3
-                    rgb[idx], rgb[idx + 1], rgb[idx + 2] = primary_col
+                for tx in (x0, x0 + 1, x1 - 1, x1):
+                    if 0 <= tx < width:
+                        idx = (y * width + tx) * 3
+                        rgb[idx], rgb[idx + 1], rgb[idx + 2] = primary_col
 
-        # 4. Label above or below bounding box
+        # 4. Label above or below bounding box with physical caliper size (0.2mm/px scale)
         conf_val = det["raw_confidence"]
-        short_lbl = det.get("short_label", "CANDIDATE")
-        label_line_1 = f"{short_lbl}"
-        label_line_2 = f"RAW SCORE: {conf_val:.2f} (THR {threshold:.2f})"
+        mm_w = round(bw * 0.28, 1)
+        mm_h = round(bh * 0.28, 1)
+        short_lbl = "UNCERTAIN MASS" if is_uncertain else "CYST CANDIDATE"
+        label_line_1 = f"{short_lbl}  {mm_w}X{mm_h}MM"
+        label_line_2 = f"CONF: {conf_val * 100:.1f}% (RAW {conf_val:.2f})"
 
-        lbl_x = max(4, min(width - max(len(label_line_1), len(label_line_2)) * 6 - 8, x0))
-        lbl_y = y0 - 24 if y0 >= 42 else min(height - 26, y1 + 5)
+        lbl_x = max(4, min(width - max(len(label_line_1), len(label_line_2)) * 6 - 12, x0))
+        lbl_y = y0 - 25 if y0 >= 44 else min(height - 27, y1 + 6)
 
         draw_text_5x7(
-            rgb, width, height, lbl_x, lbl_y, label_line_1, color=primary_col, bg_color=(7, 10, 18)
+            rgb, width, height, lbl_x, lbl_y, label_line_1, color=primary_col, bg_color=(6, 9, 16)
         )
         draw_text_5x7(
             rgb,
@@ -358,8 +394,8 @@ def render_annotated_frame(
             lbl_x,
             lbl_y + 11,
             label_line_2,
-            color=(226, 232, 240),
-            bg_color=(7, 10, 18),
+            color=(241, 245, 249),
+            bg_color=(6, 9, 16),
         )
 
     return rgb

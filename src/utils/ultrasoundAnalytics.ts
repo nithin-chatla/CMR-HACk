@@ -1,4 +1,9 @@
-import type { DetectionRecord, FrameTimelineEntry, ProcessingSettings } from '../types/scansure';
+import type {
+  AnnotatedKeyframe,
+  DetectionRecord,
+  FrameTimelineEntry,
+  ProcessingSettings,
+} from '../types/scansure';
 
 export function classifyConfidenceStatus(
   rawScore: number,
@@ -91,6 +96,38 @@ export function filterTimelineByThreshold(
   };
 }
 
+export function selectTopConfidenceKeyframes(
+  keyframes: AnnotatedKeyframe[],
+  timeline: FrameTimelineEntry[],
+  requestedCount: number
+): AnnotatedKeyframe[] {
+  const safeCount = Math.max(1, Math.min(12, Math.floor(requestedCount || 4)));
+  const enriched = keyframes.map((kf) => {
+    const tlEntry = timeline[kf.frame_number];
+    const conf =
+      typeof kf.max_confidence === 'number'
+        ? kf.max_confidence
+        : tlEntry?.max_confidence ?? 0;
+    const detCount =
+      typeof kf.detection_count === 'number'
+        ? kf.detection_count
+        : tlEntry?.detection_count ?? 0;
+    return {
+      ...kf,
+      max_confidence: conf,
+      detection_count: detCount,
+    };
+  });
+
+  enriched.sort((a, b) => {
+    const diff = (b.max_confidence ?? 0) - (a.max_confidence ?? 0);
+    if (Math.abs(diff) > 1e-5) return diff;
+    return a.frame_number - b.frame_number;
+  });
+
+  return enriched.slice(0, safeCount);
+}
+
 export function validateProcessingSettings(settings: ProcessingSettings): {
   valid: boolean;
   errors: string[];
@@ -107,6 +144,12 @@ export function validateProcessingSettings(settings: ProcessingSettings): {
   }
   if (settings.gamma < 0.6 || settings.gamma > 1.8) {
     errors.push('Gamma must be between 0.60 and 1.80.');
+  }
+  if (
+    settings.top_k_frames !== undefined &&
+    (settings.top_k_frames < 1 || settings.top_k_frames > 12)
+  ) {
+    errors.push('Top high-confidence frames count must be between 1 and 12.');
   }
   return {
     valid: errors.length === 0,

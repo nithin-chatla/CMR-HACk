@@ -109,6 +109,7 @@ export interface ProcessingSettings {
   temporal_smoothing: boolean;
   output_resolution: 'original' | '320x240' | '480x360' | '640x480';
   device: 'auto' | 'cpu' | 'gpu';
+  top_k_frames?: number;
 }
 
 export interface DetectionRecord {
@@ -152,6 +153,8 @@ export interface AnnotatedKeyframe {
   url: string;
   comparison_filename: string;
   comparison_url: string;
+  max_confidence?: number;
+  detection_count?: number;
 }
 
 export interface JobResultPayload {
@@ -261,6 +264,7 @@ export interface JobResultPayload {
     reports: {
       json: { filename: string; url: string; path: string };
       csv: { filename: string; url: string; path: string };
+      pdf?: { filename: string; url: string; path: string };
     };
     annotated_png_frames: AnnotatedKeyframe[];
   };

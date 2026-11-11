@@ -1,0 +1,129 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 7851 >>
+stream
+0.043 0.063 0.110 rg 0.0 765.0 612.0 77.0 re f
+BT /F2 13 Tf 0.950 0.980 1.000 rg 36.0 814.0 Td (SCANSURE AI  |  CLINICAL ULTRASOUND ENHANCEMENT & ANOMALY REPORT) Tj ET
+BT /F1 9 Tf 0.024 0.714 0.831 rg 36.0 796.0 Td (Offline AI-Assisted Review Packet for Remote Radiologist Evaluation) Tj ET
+BT /F1 8 Tf 0.750 0.800 0.880 rg 36.0 780.0 Td (Study ID: demo_case02    |    Generated: 2026-11-11 16:58:33 UTC    |    Workstation: jio-fiber \(i5-13420H / RTX 3050 6GB\)) Tj ET
+0.990 0.960 0.900 rg 36.0 718.0 540.0 36.0 re f
+1.00 w 0.900 0.650 0.200 RG 36.0 718.0 m 576.0 718.0 l S
+BT /F2 8 Tf 0.650 0.320 0.040 rg 44.0 740.0 Td (CLINICAL SAFETY NOTICE \(NON-DIAGNOSTIC AI ASSISTANCE\):) Tj ET
+BT /F1 8 Tf 0.450 0.250 0.050 rg 44.0 727.0 Td (ScanSure AI is an experimental AI-assisted tool. It does not provide a medical diagnosis. All findings require radiologist review.) Tj ET
+BT /F2 10 Tf 0.040 0.080 0.160 rg 36.0 694.0 Td (1. ULTRASOUND ACQUISITION & IMAGE ENHANCEMENT SUMMARY) Tj ET
+0.80 w 0.820 0.860 0.920 RG 36.0 689.0 m 576.0 689.0 l S
+BT /F2 9 Tf 0.080 0.110 0.160 rg 36.0 672.0 Td (Source Video File: breast_ultrasound_multifocal_case02.mp4) Tj ET
+BT /F2 9 Tf 0.080 0.110 0.160 rg 310.0 672.0 Td (Enhancement Pipeline: speckle_bilateral_clahe) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 36.0 657.0 Td (Resolution & FPS: 320x240 @ 15.0 FPS \(45 frames\)) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 310.0 657.0 Td (Strength / CLAHE / Gamma: 75%  |  Clip 2.2  |  Gamma 1.05) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 36.0 642.0 Td (Mean PSNR / SSIM: 22.16 dB  |  SSIM 0.9285) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 310.0 642.0 Td (Speckle ENL Improvement: 36.2 -> 52.26 \(+44.4%\)) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 36.0 627.0 Td (Edge Preservation Index \(EPI\): 0.9387) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 310.0 627.0 Td (Video Frame Integrity: Exact Match Verified \(45/45 frames\)) Tj ET
+BT /F2 10 Tf 0.040 0.080 0.160 rg 36.0 599.0 Td (2. AI-ASSISTED ANOMALY DETECTION & CONFIDENCE TRIAGE) Tj ET
+0.80 w 0.820 0.860 0.920 RG 36.0 594.0 m 576.0 594.0 l S
+BT /F2 9 Tf 0.080 0.110 0.160 rg 36.0 579.0 Td (Model Architecture: ScanSure-UNet-Lite-v1.2-BreastUS \(1.2.0-busi-calibrated\)) Tj ET
+BT /F1 9 Tf 0.080 0.110 0.160 rg 36.0 565.0 Td (Supported Anatomical Scope: Breast Ultrasound \(B-Mode Linear Array 5-12 MHz\)) Tj ET
+0.940 0.970 0.990 rg 36.0 541.0 540.0 22.0 re f
+BT /F2 9 Tf 0.080 0.110 0.160 rg 44.0 549.0 Td (Frames With Findings: 45 / 45) Tj ET
+BT /F2 9 Tf 0.080 0.110 0.160 rg 210.0 549.0 Td (Peak Raw Score: 0.940 \(Thr 0.55\)) Tj ET
+BT /F2 9 Tf 0.030 0.450 0.580 rg 390.0 549.0 Td (Triage: Uncertain - Requires Radiolo) Tj ET
+BT /F2 10 Tf 0.040 0.080 0.160 rg 36.0 519.0 Td (3. ANNOTATED KEYFRAMES & REPRESENTATIVE REGION MEASUREMENTS) Tj ET
+0.80 w 0.820 0.860 0.920 RG 36.0 514.0 m 576.0 514.0 l S
+BT /F2 8 Tf 0.080 0.110 0.160 rg 36.0 499.0 Td (Frame #) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 95.0 499.0 Td (Timestamp) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 160.0 499.0 Td (Category / Classification) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 350.0 499.0 Td (BBox [x,y,w,h]) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 450.0 499.0 Td (Area \(px\)) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 499.0 Td (Raw Score) Tj ET
+0.60 w 0.750 0.800 0.860 RG 36.0 495.0 m 576.0 495.0 l S
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 484.0 Td (Frame 000) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 484.0 Td (0.00 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 484.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 484.0 Td ([104, 109, 30, 24]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 484.0 Td (630) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 484.0 Td (0.936) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 469.0 Td (Frame 005) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 469.0 Td (0.33 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 469.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 469.0 Td ([212, 130, 18, 18]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 469.0 Td (270) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 469.0 Td (0.851) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 454.0 Td (Frame 011) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 454.0 Td (0.73 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 454.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 454.0 Td ([107, 106, 30, 24]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 454.0 Td (612) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 454.0 Td (0.932) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 439.0 Td (Frame 016) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 439.0 Td (1.07 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 439.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 439.0 Td ([212, 128, 21, 17]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 439.0 Td (252) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 439.0 Td (0.852) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 424.0 Td (Frame 022) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 424.0 Td (1.47 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 424.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 424.0 Td ([104, 106, 30, 24]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 424.0 Td (603) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 424.0 Td (0.931) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 409.0 Td (Frame 027) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 409.0 Td (1.80 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 409.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 409.0 Td ([206, 127, 21, 18]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 409.0 Td (261) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 409.0 Td (0.848) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 394.0 Td (Frame 033) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 394.0 Td (2.20 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 394.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 394.0 Td ([101, 106, 30, 24]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 394.0 Td (612) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 394.0 Td (0.934) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 36.0 379.0 Td (Frame 038) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 95.0 379.0 Td (2.53 s) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 160.0 379.0 Td (Cystic / Anechoic Lesion Candida) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 350.0 379.0 Td ([206, 130, 18, 18]) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 450.0 379.0 Td (252) Tj ET
+BT /F2 8 Tf 0.080 0.110 0.160 rg 510.0 379.0 Td (0.845) Tj ET
+BT /F2 10 Tf 0.040 0.080 0.160 rg 36.0 349.0 Td (4. GENERATED ANNOTATED KEYFRAME FILES & RADIOLOGIST REVIEW SIGN-OFF) Tj ET
+0.80 w 0.820 0.860 0.920 RG 36.0 344.0 m 576.0 344.0 l S
+BT /F1 8 Tf 0.080 0.110 0.160 rg 44.0 335.0 Td (* frame_0038_annotated.png  |  frame_0038_comparison.png  \(Frame #38 \(2.53s\) - Confidence 94.0%\)) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 44.0 321.0 Td (* frame_0040_annotated.png  |  frame_0040_comparison.png  \(Frame #40 \(2.67s\) - Confidence 93.9%\)) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 44.0 307.0 Td (* frame_0013_annotated.png  |  frame_0013_comparison.png  \(Frame #13 \(0.87s\) - Confidence 93.9%\)) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 44.0 293.0 Td (* frame_0002_annotated.png  |  frame_0002_comparison.png  \(Frame #2 \(0.13s\) - Confidence 93.8%\)) Tj ET
+0.960 0.970 0.990 rg 36.0 213.0 540.0 58.0 re f
+BT /F2 8 Tf 0.080 0.110 0.160 rg 46.0 257.0 Td (QUALIFIED RADIOLOGIST REVIEW & CLINICAL IMPRESSION:) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 46.0 241.0 Td ([  ] Confirmed Simple Cyst     [  ] Follow-Up Ultrasound Recommended     [  ] Diagnostic Biopsy / Referral) Tj ET
+BT /F1 8 Tf 0.080 0.110 0.160 rg 46.0 223.0 Td (Radiologist Name / Signature: ___________________________     Date: ______________) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000257 00000 n 
+0000000327 00000 n 
+0000000402 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+8305
+%%EOF

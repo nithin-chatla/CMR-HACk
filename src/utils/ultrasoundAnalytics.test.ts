@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import {
   classifyConfidenceStatus,
   filterTimelineByThreshold,
+  selectTopConfidenceKeyframes,
   validateProcessingSettings,
   formatTimestampMillis,
 } from './ultrasoundAnalytics';
-import type { FrameTimelineEntry, ProcessingSettings } from '../types/scansure';
+import type { AnnotatedKeyframe, FrameTimelineEntry, ProcessingSettings } from '../types/scansure';
 
 test('classifyConfidenceStatus enforces validated threshold and uncertain review boundaries', () => {
   const below = classifyConfidenceStatus(0.42, 0.55, 0.72);
@@ -79,6 +80,46 @@ test('filterTimelineByThreshold suppresses detections below threshold and recalc
   assert.equal(strictResult.filteredTimeline[0].detections[0].raw_confidence, 0.81);
 });
 
+test('selectTopConfidenceKeyframes ranks keyframes by highest confidence score and slices to user count', () => {
+  const kfs: AnnotatedKeyframe[] = [
+    {
+      frame_number: 0,
+      timestamp_sec: 0,
+      label: 'Frame 0',
+      filename: 'f0.png',
+      url: '/f0.png',
+      comparison_filename: 'c0.png',
+      comparison_url: '/c0.png',
+      max_confidence: 0.75,
+    },
+    {
+      frame_number: 5,
+      timestamp_sec: 0.33,
+      label: 'Frame 5',
+      filename: 'f5.png',
+      url: '/f5.png',
+      comparison_filename: 'c5.png',
+      comparison_url: '/c5.png',
+      max_confidence: 0.94,
+    },
+    {
+      frame_number: 12,
+      timestamp_sec: 0.8,
+      label: 'Frame 12',
+      filename: 'f12.png',
+      url: '/f12.png',
+      comparison_filename: 'c12.png',
+      comparison_url: '/c12.png',
+      max_confidence: 0.89,
+    },
+  ];
+
+  const top2 = selectTopConfidenceKeyframes(kfs, [], 2);
+  assert.equal(top2.length, 2);
+  assert.equal(top2[0].frame_number, 5);
+  assert.equal(top2[1].frame_number, 12);
+});
+
 test('validateProcessingSettings catches out-of-range parameters', () => {
   const validConfig: ProcessingSettings = {
     enhancement_method: 'speckle_bilateral_clahe',
@@ -91,6 +132,7 @@ test('validateProcessingSettings catches out-of-range parameters', () => {
     temporal_smoothing: true,
     output_resolution: 'original',
     device: 'auto',
+    top_k_frames: 6,
   };
   assert.equal(validateProcessingSettings(validConfig).valid, true);
 

@@ -9,6 +9,7 @@ import datetime
 import json
 import os
 from typing import Any, Dict, List
+from .pdf_report_generator import generate_clinical_pdf_report
 
 
 PROBLEM_STATEMENT = (
@@ -170,7 +171,10 @@ def generate_detection_reports(
                 }
             )
 
+    pdf_path = generate_clinical_pdf_report(output_dir, report_payload)
+
     return {
         "json_report_path": json_path,
         "csv_report_path": csv_path,
+        "pdf_report_path": pdf_path,
     }

@@ -1,8 +1,9 @@
 {
   "application": "ScanSure AI",
-  "version": "1.2.0-offline",
+  "version": "1.3.0-production",
+  "problem_statement": "Develop an offline AI assisted imaging tool that enhances low quality ultrasound videos using denoising and contrast adjustment, then highlights potential cysts or other anomalies using computer vision. The system generates annotated images with confidence scores for remote radiologist review, supporting healthcare workers using affordable ultrasound equipment in resource limited settings.",
   "job_id": "demo_case03",
-  "generated_at_utc": "2026-11-11T15:30:04.353463+00:00",
+  "generated_at_utc": "2026-11-11T16:59:05.770532+00:00",
   "medical_disclaimer": "ScanSure AI is an experimental AI-assisted ultrasound image enhancement and analysis tool. It does not provide a medical diagnosis. All findings require review by a qualified radiologist.",
   "input_video": {
     "filename": "breast_ultrasound_normal_control03.mp4",
@@ -37,7 +38,7 @@
     "requested_device": "auto",
     "executed_device": "cpu"
   },
-  "processing_duration_sec": 31.039,
+  "processing_duration_sec": 32.07,
   "model_metadata": {
     "model_name": "ScanSure-UNet-Lite-v1.2-BreastUS",
     "model_version": "1.2.0-busi-calibrated",
@@ -79,6 +80,8 @@
     "peak_raw_confidence": 0.0,
     "peak_confidence_frame": 0,
     "validated_threshold": 0.55,
+    "annotated_images_generated": 12,
+    "target_workflow": "Remote Radiologist Review for Rural Healthcare Workers (Low-Cost Portable Ultrasound)",
     "confidence_disclosure": "Reported scores are raw uncalibrated segmentation model scores, NOT calibrated clinical probabilities. Findings scoring between the validated threshold and 0.72 are flagged as 'Uncertain \u2014 Requires Radiologist Review'.",
     "clinical_recommendation": "No region detected above validated threshold \u2014 Standard Radiologist Review Recommended."
   },
@@ -119,7 +122,7 @@
         "fps": 15.0,
         "duration_sec": 3.0,
         "resolution": "320x240",
-        "file_size_mb": 0.816
+        "file_size_mb": 0.812
       },
       "comparison_video": {
         "filename": "comparison_video.mp4",
@@ -143,29 +146,101 @@
       "max_confidence": 0.0
     },
     {
-      "frame_number": 15,
-      "timestamp_sec": 1.0,
-      "label": "Frame #15 (1.00s) \u2014 Baseline Enhanced",
-      "filename": "frame_0015_annotated.png",
-      "comparison_filename": "frame_0015_comparison.png",
+      "frame_number": 2,
+      "timestamp_sec": 0.1333,
+      "label": "Frame #2 (0.13s) \u2014 Baseline Enhanced",
+      "filename": "frame_0002_annotated.png",
+      "comparison_filename": "frame_0002_comparison.png",
       "detection_count": 0,
       "max_confidence": 0.0
     },
     {
-      "frame_number": 30,
-      "timestamp_sec": 2.0,
-      "label": "Frame #30 (2.00s) \u2014 Baseline Enhanced",
-      "filename": "frame_0030_annotated.png",
-      "comparison_filename": "frame_0030_comparison.png",
+      "frame_number": 4,
+      "timestamp_sec": 0.2667,
+      "label": "Frame #4 (0.27s) \u2014 Baseline Enhanced",
+      "filename": "frame_0004_annotated.png",
+      "comparison_filename": "frame_0004_comparison.png",
       "detection_count": 0,
       "max_confidence": 0.0
     },
     {
-      "frame_number": 44,
-      "timestamp_sec": 2.9333,
-      "label": "Frame #44 (2.93s) \u2014 Baseline Enhanced",
-      "filename": "frame_0044_annotated.png",
-      "comparison_filename": "frame_0044_comparison.png",
+      "frame_number": 6,
+      "timestamp_sec": 0.4,
+      "label": "Frame #6 (0.40s) \u2014 Baseline Enhanced",
+      "filename": "frame_0006_annotated.png",
+      "comparison_filename": "frame_0006_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 8,
+      "timestamp_sec": 0.5333,
+      "label": "Frame #8 (0.53s) \u2014 Baseline Enhanced",
+      "filename": "frame_0008_annotated.png",
+      "comparison_filename": "frame_0008_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 10,
+      "timestamp_sec": 0.6667,
+      "label": "Frame #10 (0.67s) \u2014 Baseline Enhanced",
+      "filename": "frame_0010_annotated.png",
+      "comparison_filename": "frame_0010_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 12,
+      "timestamp_sec": 0.8,
+      "label": "Frame #12 (0.80s) \u2014 Baseline Enhanced",
+      "filename": "frame_0012_annotated.png",
+      "comparison_filename": "frame_0012_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 14,
+      "timestamp_sec": 0.9333,
+      "label": "Frame #14 (0.93s) \u2014 Baseline Enhanced",
+      "filename": "frame_0014_annotated.png",
+      "comparison_filename": "frame_0014_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 16,
+      "timestamp_sec": 1.0667,
+      "label": "Frame #16 (1.07s) \u2014 Baseline Enhanced",
+      "filename": "frame_0016_annotated.png",
+      "comparison_filename": "frame_0016_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 18,
+      "timestamp_sec": 1.2,
+      "label": "Frame #18 (1.20s) \u2014 Baseline Enhanced",
+      "filename": "frame_0018_annotated.png",
+      "comparison_filename": "frame_0018_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 20,
+      "timestamp_sec": 1.3333,
+      "label": "Frame #20 (1.33s) \u2014 Baseline Enhanced",
+      "filename": "frame_0020_annotated.png",
+      "comparison_filename": "frame_0020_comparison.png",
+      "detection_count": 0,
+      "max_confidence": 0.0
+    },
+    {
+      "frame_number": 22,
+      "timestamp_sec": 1.4667,
+      "label": "Frame #22 (1.47s) \u2014 Baseline Enhanced",
+      "filename": "frame_0022_annotated.png",
+      "comparison_filename": "frame_0022_comparison.png",
       "detection_count": 0,
       "max_confidence": 0.0
     }

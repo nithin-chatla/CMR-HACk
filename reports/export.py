@@ -47,6 +47,11 @@ def package_export_manifest(
                 "url": f"{base_url}/detection_report.csv",
                 "path": report_paths["csv_report_path"],
             },
+            "pdf": {
+                "filename": "radiologist_clinical_report.pdf",
+                "url": f"{base_url}/radiologist_clinical_report.pdf",
+                "path": report_paths.get("pdf_report_path", ""),
+            },
         },
         "annotated_png_frames": [
             {
@@ -61,6 +66,8 @@ def package_export_manifest(
                     if kf.get("comparison_filename")
                     else ""
                 ),
+                "max_confidence": kf.get("max_confidence", 0.0),
+                "detection_count": kf.get("detection_count", 0),
             }
             for kf in keyframes
         ],
