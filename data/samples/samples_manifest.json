@@ -1,0 +1,44 @@
+[
+  {
+    "id": "breast_cyst_phantom_01",
+    "filename": "breast_ultrasound_cyst_case01.mp4",
+    "filepath": "/app/applet/data/samples/breast_ultrasound_cyst_case01.mp4",
+    "ground_truth_path": "/app/applet/data/samples/breast_cyst_phantom_01_ground_truth.json",
+    "title": "Case 01: Well-Circumscribed Anechoic Breast Cyst (B-Mode 10MHz)",
+    "description": "High-speckle rural portable linear-probe scan showing a solitary hypoechoic/anechoic cystic lesion with posterior acoustic enhancement.",
+    "anatomy": "Breast Ultrasound (Right Upper Outer Quadrant)",
+    "width": 320,
+    "height": 240,
+    "fps": 15,
+    "num_frames": 45,
+    "expected_lesion_count": 1
+  },
+  {
+    "id": "breast_multifocal_case02",
+    "filename": "breast_ultrasound_multifocal_case02.mp4",
+    "filepath": "/app/applet/data/samples/breast_ultrasound_multifocal_case02.mp4",
+    "ground_truth_path": "/app/applet/data/samples/breast_multifocal_case02_ground_truth.json",
+    "title": "Case 02: Multifocal Cyst & Complex Hypoechoic Mass (B-Mode 8MHz)",
+    "description": "Low-contrast portable scan containing a primary cystic lesion and a secondary smaller low-margin hypoechoic nodule requiring radiologist review.",
+    "anatomy": "Breast Ultrasound (Left Retroareolar Region)",
+    "width": 320,
+    "height": 240,
+    "fps": 15,
+    "num_frames": 45,
+    "expected_lesion_count": 2
+  },
+  {
+    "id": "breast_normal_control_03",
+    "filename": "breast_ultrasound_normal_control03.mp4",
+    "filepath": "/app/applet/data/samples/breast_ultrasound_normal_control03.mp4",
+    "ground_truth_path": "/app/applet/data/samples/breast_normal_control_03_ground_truth.json",
+    "title": "Case 03: Normal Fibroglandular Parenchyma Control (No Anomaly)",
+    "description": "Negative control scan showing normal skin line, subcutaneous fat lobules, Cooper's ligaments, and pectoralis fascia without focal lesions.",
+    "anatomy": "Breast Ultrasound (Normal Control)",
+    "width": 320,
+    "height": 240,
+    "fps": 15,
+    "num_frames": 45,
+    "expected_lesion_count": 0
+  }
+]

@@ -1,0 +1,45 @@
+application:
+  name: "ScanSure AI"
+  version: "1.2.0-offline"
+  mode: "offline_first"
+  disclaimer: "ScanSure AI is an experimental AI-assisted ultrasound image enhancement and analysis tool. It does not provide a medical diagnosis. All findings require review by a qualified radiologist."
+
+hardware:
+  default_device: "auto"
+  fallback_device: "cpu"
+  max_ram_buffer_mb: 512
+  frame_batch_size: 4
+
+enhancement:
+  default_method: "speckle_bilateral_clahe"
+  available_methods:
+    - "speckle_bilateral_clahe"
+    - "median_clahe"
+    - "nlm_clahe"
+    - "clahe_only"
+  strength: 0.75
+  clahe_clip_limit: 2.2
+  clahe_tile_grid: [8, 8]
+  gamma: 1.05
+  denoise_window_radius: 3
+  temporal_alpha: 0.28
+  motion_gate_threshold: 18.0
+
+detection:
+  enabled: true
+  model_name: "ScanSure-UNet-Lite-v1.2-BreastUS"
+  model_version: "1.2.0-busi-calibrated"
+  supported_anatomy: "Breast Ultrasound (B-Mode Linear Array 5-12 MHz)"
+  validated_threshold: 0.55
+  uncertain_upper_bound: 0.72
+  min_region_area_px: 64
+  max_region_area_ratio: 0.35
+  temporal_iou_smoothing: true
+  temporal_persistence_frames: 2
+
+video:
+  supported_formats: [".mp4", ".avi", ".mov", ".mkv"]
+  output_codec: "libx264"
+  pixel_format: "yuv420p"
+  crf: 18
+  preserve_audio: true

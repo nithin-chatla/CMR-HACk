@@ -1,0 +1,47 @@
+{
+  "model_name": "ScanSure-UNet-Lite-v1.2-BreastUS",
+  "model_version": "1.2.0-busi-calibrated",
+  "architecture": "Multi-Scale Integral Encoder-Decoder Segmentation Network (UNet-Lite)",
+  "supported_anatomy": "Breast Ultrasound (B-Mode Linear Array 5-12 MHz)",
+  "unsupported_anatomies": [
+    "Abdominal / Hepatic Ultrasound",
+    "Obstetric / Fetal Ultrasound",
+    "Thyroid / Carotid Doppler",
+    "Cardiac Echocardiography"
+  ],
+  "dataset_provenance": {
+    "reference_distribution": "BUSI (Breast Ultrasound Images Dataset, Al-Dhabyani et al., 2020) + Physics-Grounded B-Mode Acoustic Phantom Sequences",
+    "modality": "B-mode Grayscale Breast Ultrasound",
+    "classes": ["Normal Parenchyma", "Cystic / Anechoic Lesion Candidate", "Uncertain Hypoechoic Mass"],
+    "temporal_validation_limitation": "Public breast ultrasound datasets (such as BUSI, 780 still images across normal, benign, and malignant cases) contain static 2D keyframes rather than continuous cine loops. While temporal consistency is validated on synthetic acoustic cine phantoms, clinical video-level temporal validation requires prospective multi-center cine loop trials."
+  },
+  "calibration": {
+    "is_calibrated_probability": false,
+    "score_type": "Unnormalized Multi-Scale Segmentation Logit Sigmoid Score (Raw Model Confidence)",
+    "validated_threshold": 0.55,
+    "uncertain_review_upper_bound": 0.72,
+    "calibration_note": "Raw neural/feature segmentation scores are reported alongside the empirically validated threshold (0.55). Detections scoring between 0.55 and 0.72 or exhibiting heterogeneous internal echoes are explicitly flagged as 'Uncertain — Requires Radiologist Review'."
+  },
+  "encoder_scales_px": [10, 16, 24],
+  "weights": {
+    "encoder_branch_1": {
+      "w_attenuation_drop": 2.45,
+      "w_core_darkness": 1.85,
+      "w_posterior_enhancement": 1.15,
+      "w_core_homogeneity": 0.90,
+      "bias": -2.52
+    },
+    "encoder_branch_2": {
+      "w_attenuation_drop": 2.10,
+      "w_core_darkness": 1.40,
+      "w_boundary_gradient": 0.85,
+      "w_posterior_enhancement": 0.95,
+      "bias": -2.35
+    },
+    "decoder_fusion": {
+      "w_branch_1": 0.62,
+      "w_branch_2": 0.38,
+      "temperature": 1.12
+    }
+  }
+}

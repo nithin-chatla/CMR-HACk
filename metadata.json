@@ -1,0 +1,6 @@
+{
+  "name": "ScanSure AI — Offline Ultrasound Video Enhancement & Anomaly Detection",
+  "description": "Offline-first AI-assisted ultrasound video speckle denoising, CLAHE contrast enhancement, temporal stabilization, and anomaly segmentation workstation for rural healthcare.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

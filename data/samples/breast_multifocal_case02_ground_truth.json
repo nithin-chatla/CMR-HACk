@@ -1,0 +1,1901 @@
+{
+  "sample_id": "breast_multifocal_case02",
+  "filename": "breast_ultrasound_multifocal_case02.mp4",
+  "anatomy": "Breast Ultrasound (Left Retroareolar Region)",
+  "width": 320,
+  "height": 240,
+  "fps": 15,
+  "num_frames": 45,
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp_sec": 0.0,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            91,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            116.0,
+            120.0
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            200,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            218.0,
+            138.0
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 1,
+      "timestamp_sec": 0.0667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            91,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            116.49,
+            119.98
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            200,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            218.49,
+            137.98
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 2,
+      "timestamp_sec": 0.1333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            92,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            116.96,
+            119.92
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            201,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            218.96,
+            137.92
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 3,
+      "timestamp_sec": 0.2,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            92,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            117.42,
+            119.83
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            201,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            219.42,
+            137.83
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 4,
+      "timestamp_sec": 0.2667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            93,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            117.85,
+            119.7
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            202,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            219.85,
+            137.7
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 5,
+      "timestamp_sec": 0.3333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            93,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            118.25,
+            119.53
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            202,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            220.25,
+            137.53
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 6,
+      "timestamp_sec": 0.4,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            118.6,
+            119.34
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            220.6,
+            137.34
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 7,
+      "timestamp_sec": 0.4667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            118.9,
+            119.12
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            220.9,
+            137.12
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 8,
+      "timestamp_sec": 0.5333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            119.15,
+            118.88
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            221.15,
+            136.88
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 9,
+      "timestamp_sec": 0.6,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            119.33,
+            118.62
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            221.33,
+            136.62
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 10,
+      "timestamp_sec": 0.6667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            119.45,
+            118.35
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            221.45,
+            136.35
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 11,
+      "timestamp_sec": 0.7333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            119.5,
+            118.07
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            221.5,
+            136.07
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 12,
+      "timestamp_sec": 0.8,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            119.48,
+            117.79
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            221.48,
+            135.79
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 13,
+      "timestamp_sec": 0.8667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            119.4,
+            117.52
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            221.4,
+            135.52
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 14,
+      "timestamp_sec": 0.9333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            119.25,
+            117.25
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            221.25,
+            135.25
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 15,
+      "timestamp_sec": 1.0,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            119.03,
+            117.0
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            221.03,
+            135.0
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 16,
+      "timestamp_sec": 1.0667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            94,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            118.76,
+            116.77
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            203,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            220.76,
+            134.77
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 17,
+      "timestamp_sec": 1.1333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            93,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            118.43,
+            116.56
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            202,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            220.43,
+            134.56
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 18,
+      "timestamp_sec": 1.2,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            93,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            118.06,
+            116.38
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            202,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            220.06,
+            134.38
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 19,
+      "timestamp_sec": 1.2667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            93,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            117.64,
+            116.23
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            202,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            219.64,
+            134.23
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 20,
+      "timestamp_sec": 1.3333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            92,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            117.2,
+            116.12
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            201,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            219.2,
+            134.12
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 21,
+      "timestamp_sec": 1.4,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            92,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            116.73,
+            116.04
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            201,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            218.73,
+            134.04
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 22,
+      "timestamp_sec": 1.4667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            91,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            116.24,
+            116.0
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            200,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            218.24,
+            134.0
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 23,
+      "timestamp_sec": 1.5333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            91,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            115.76,
+            116.0
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            200,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            217.76,
+            134.0
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 24,
+      "timestamp_sec": 1.6,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            90,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            115.27,
+            116.04
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            199,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            217.27,
+            134.04
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 25,
+      "timestamp_sec": 1.6667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            90,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            114.8,
+            116.12
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            199,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            216.8,
+            134.12
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 26,
+      "timestamp_sec": 1.7333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            89,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            114.36,
+            116.23
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            198,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            216.36,
+            134.23
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 27,
+      "timestamp_sec": 1.8,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            89,
+            97,
+            50,
+            38
+          ],
+          "center": [
+            113.94,
+            116.38
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            198,
+            119,
+            36,
+            30
+          ],
+          "center": [
+            215.94,
+            134.38
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 28,
+      "timestamp_sec": 1.8667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            89,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            113.57,
+            116.56
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            198,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            215.57,
+            134.56
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 29,
+      "timestamp_sec": 1.9333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            113.24,
+            116.77
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            215.24,
+            134.77
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 30,
+      "timestamp_sec": 2.0,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            112.97,
+            117.0
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            214.97,
+            135.0
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 31,
+      "timestamp_sec": 2.0667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            98,
+            50,
+            38
+          ],
+          "center": [
+            112.75,
+            117.25
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            120,
+            36,
+            30
+          ],
+          "center": [
+            214.75,
+            135.25
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 32,
+      "timestamp_sec": 2.1333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            112.6,
+            117.52
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            214.6,
+            135.52
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 33,
+      "timestamp_sec": 2.2,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            112.52,
+            117.79
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            214.52,
+            135.79
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 34,
+      "timestamp_sec": 2.2667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            112.5,
+            118.07
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            214.5,
+            136.07
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 35,
+      "timestamp_sec": 2.3333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            99,
+            50,
+            38
+          ],
+          "center": [
+            112.55,
+            118.35
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            121,
+            36,
+            30
+          ],
+          "center": [
+            214.55,
+            136.35
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 36,
+      "timestamp_sec": 2.4,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            112.67,
+            118.62
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            214.67,
+            136.62
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 37,
+      "timestamp_sec": 2.4667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            112.85,
+            118.88
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            214.85,
+            136.88
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 38,
+      "timestamp_sec": 2.5333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            113.1,
+            119.12
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            215.1,
+            137.12
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 39,
+      "timestamp_sec": 2.6,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            88,
+            100,
+            50,
+            38
+          ],
+          "center": [
+            113.4,
+            119.34
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            197,
+            122,
+            36,
+            30
+          ],
+          "center": [
+            215.4,
+            137.34
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 40,
+      "timestamp_sec": 2.6667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            89,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            113.75,
+            119.53
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            198,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            215.75,
+            137.53
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 41,
+      "timestamp_sec": 2.7333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            89,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            114.15,
+            119.7
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            198,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            216.15,
+            137.7
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 42,
+      "timestamp_sec": 2.8,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            90,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            114.58,
+            119.83
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            199,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            216.58,
+            137.83
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 43,
+      "timestamp_sec": 2.8667,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            90,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            115.04,
+            119.92
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            199,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            217.04,
+            137.92
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    },
+    {
+      "frame_index": 44,
+      "timestamp_sec": 2.9333,
+      "ground_truth_regions": [
+        {
+          "lesion_id": 1,
+          "category": "Cystic / Anechoic Lesion Candidate",
+          "bbox": [
+            91,
+            101,
+            50,
+            38
+          ],
+          "center": [
+            115.51,
+            119.98
+          ],
+          "radii": [
+            25,
+            19
+          ]
+        },
+        {
+          "lesion_id": 2,
+          "category": "Uncertain Hypoechoic Mass",
+          "bbox": [
+            200,
+            123,
+            36,
+            30
+          ],
+          "center": [
+            217.51,
+            137.98
+          ],
+          "radii": [
+            18,
+            15
+          ]
+        }
+      ]
+    }
+  ]
+}

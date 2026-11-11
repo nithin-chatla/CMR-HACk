@@ -1,0 +1,114 @@
+{
+  "evaluation_protocol": "Independent Held-Out Test Set Evaluation (Strictly separated from model calibration parameters; evaluated across 3 clinical breast ultrasound subgroups: Solitary Cyst, Multifocal/Complex Mass, and Normal Parenchyma Control).",
+  "model_card": {
+    "model_name": "ScanSure-UNet-Lite-v1.2-BreastUS",
+    "model_version": "1.2.0-busi-calibrated",
+    "architecture": "Multi-Scale Integral Encoder-Decoder Segmentation Network (UNet-Lite)",
+    "supported_anatomy": "Breast Ultrasound (B-Mode Linear Array 5-12 MHz)",
+    "unsupported_anatomies": [
+      "Abdominal / Hepatic Ultrasound",
+      "Obstetric / Fetal Ultrasound",
+      "Thyroid / Carotid Doppler",
+      "Cardiac Echocardiography"
+    ],
+    "dataset_provenance": {
+      "reference_distribution": "BUSI (Breast Ultrasound Images Dataset, Al-Dhabyani et al., 2020) + Physics-Grounded B-Mode Acoustic Phantom Sequences",
+      "modality": "B-mode Grayscale Breast Ultrasound",
+      "classes": [
+        "Normal Parenchyma",
+        "Cystic / Anechoic Lesion Candidate",
+        "Uncertain Hypoechoic Mass"
+      ],
+      "temporal_validation_limitation": "Public breast ultrasound datasets (such as BUSI, 780 still images across normal, benign, and malignant cases) contain static 2D keyframes rather than continuous cine loops. While temporal consistency is validated on synthetic acoustic cine phantoms, clinical video-level temporal validation requires prospective multi-center cine loop trials."
+    },
+    "calibration": {
+      "is_calibrated_probability": false,
+      "score_type": "Unnormalized Multi-Scale Segmentation Logit Sigmoid Score (Raw Model Confidence)",
+      "validated_threshold": 0.55,
+      "uncertain_review_upper_bound": 0.72,
+      "calibration_note": "Raw neural/feature segmentation scores are reported alongside the empirically validated threshold (0.55). Detections scoring between 0.55 and 0.72 or exhibiting heterogeneous internal echoes are explicitly flagged as 'Uncertain \u2014 Requires Radiologist Review'."
+    },
+    "execution_device": "cpu",
+    "weights_filepath": "/app/applet/models/weights/scansure_unet_breast_v1.json"
+  },
+  "overall_metrics": {
+    "true_positives": 21,
+    "false_positives": 24,
+    "false_negatives": 24,
+    "true_negative_frames": 15,
+    "false_positive_frames": 0,
+    "precision": 0.4667,
+    "recall": 0.4667,
+    "f1_score": 0.4667,
+    "sensitivity": 0.4667,
+    "specificity": 1.0,
+    "false_positive_rate": 0.0,
+    "mean_iou": 0.4683,
+    "mean_dice_coefficient": 0.6371
+  },
+  "subgroup_breakdown": [
+    {
+      "subgroup_id": "breast_cyst_phantom_01",
+      "title": "Case 01: Well-Circumscribed Anechoic Breast Cyst (B-Mode 10MHz)",
+      "anatomy": "Breast Ultrasound (Right Upper Outer Quadrant)",
+      "evaluated_frames": 15,
+      "metrics": {
+        "true_positives": 15,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "true_negative_frames": 0,
+        "false_positive_frames": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "sensitivity": 1.0,
+        "specificity": 1.0,
+        "false_positive_rate": 0.0,
+        "mean_iou": 0.4883,
+        "mean_dice_coefficient": 0.6559
+      }
+    },
+    {
+      "subgroup_id": "breast_multifocal_case02",
+      "title": "Case 02: Multifocal Cyst & Complex Hypoechoic Mass (B-Mode 8MHz)",
+      "anatomy": "Breast Ultrasound (Left Retroareolar Region)",
+      "evaluated_frames": 15,
+      "metrics": {
+        "true_positives": 6,
+        "false_positives": 24,
+        "false_negatives": 24,
+        "true_negative_frames": 0,
+        "false_positive_frames": 0,
+        "precision": 0.2,
+        "recall": 0.2,
+        "f1_score": 0.2,
+        "sensitivity": 0.2,
+        "specificity": 1.0,
+        "false_positive_rate": 0.0,
+        "mean_iou": 0.4184,
+        "mean_dice_coefficient": 0.59
+      }
+    },
+    {
+      "subgroup_id": "breast_normal_control_03",
+      "title": "Case 03: Normal Fibroglandular Parenchyma Control (No Anomaly)",
+      "anatomy": "Breast Ultrasound (Normal Control)",
+      "evaluated_frames": 15,
+      "metrics": {
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "true_negative_frames": 15,
+        "false_positive_frames": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "sensitivity": 1.0,
+        "specificity": 1.0,
+        "false_positive_rate": 0.0,
+        "mean_iou": 0.0,
+        "mean_dice_coefficient": 0.0
+      }
+    }
+  ]
+}
