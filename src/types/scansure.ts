@@ -27,6 +27,22 @@ export interface HardwareProfile {
     model: string;
     vram: string;
     driver: string;
+    integrated_gpu?: string;
+  };
+  target_device_profile?: {
+    device_name: string;
+    device_id: string;
+    product_id: string;
+    processor: string;
+    installed_ram_gb: number;
+    usable_ram_gb: number;
+    discrete_gpu: string;
+    integrated_gpu: string;
+    storage_used_gb: number;
+    storage_total_gb: number;
+    storage_free_gb: number;
+    system_type: string;
+    pen_and_touch: string;
   };
   media_backends: {
     ffmpeg_available: boolean;
@@ -37,6 +53,8 @@ export interface HardwareProfile {
     processing_device: string;
     frame_batch_size: number;
     streaming_mode: boolean;
+    vram_budget_mb?: number;
+    cpu_worker_threads?: number;
     model_variant: string;
     offline_ready: boolean;
   };

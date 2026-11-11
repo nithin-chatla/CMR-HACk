@@ -131,6 +131,15 @@ export default function App() {
   const handleSelectSample = (sample: SampleVideoItem) => {
     setSelectedSampleId(sample.id);
     probeFilepath(sample.filepath);
+    const presetMap: Record<string, string> = {
+      breast_cyst_phantom_01: 'demo_case01',
+      breast_multifocal_case02: 'demo_case02',
+      breast_normal_control_03: 'demo_case03',
+    };
+    const mappedJob = presetMap[sample.id];
+    if (mappedJob) {
+      pollJobUntilComplete(mappedJob, false);
+    }
   };
 
   const handleUploadFile = async (file: File) => {
@@ -235,37 +244,33 @@ export default function App() {
           <span aria-hidden="true" className="text-slate-600">
             ·
           </span>
-          <span>Zero Cloud / Zero External API Dependency</span>
+          <span>Device: {hardware?.target_device_profile?.device_name || 'jio-fiber'}</span>
           <span aria-hidden="true" className="text-slate-600">
             ·
           </span>
           <span>Scope: Breast Ultrasound (B-Mode 5–12 MHz)</span>
         </div>
 
-        {hardware && (
-          <div className="flex flex-wrap items-center gap-2 text-slate-400 font-mono tabular-nums">
-            <span>
-              CPU: {hardware.cpu.logical_cores} Cores ({hardware.os.architecture})
-            </span>
-            <span aria-hidden="true" className="text-slate-600">
-              ·
-            </span>
-            <span>Avail RAM: {hardware.memory.available_gb} GB</span>
-            <span aria-hidden="true" className="text-slate-600">
-              ·
-            </span>
-            <span>
-              Execution: {hardware.gpu.cuda_available ? 'CUDA GPU' : 'CPU FP32 Native'}
-            </span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2 text-slate-300 font-mono tabular-nums">
+          <span>i5-13420H (2.10 GHz)</span>
+          <span aria-hidden="true" className="text-slate-600">
+            ·
+          </span>
+          <span>RAM: 16.0 GB (15.6 GB Usable)</span>
+          <span aria-hidden="true" className="text-slate-600">
+            ·
+          </span>
+          <span className="text-cyan-400">
+            RTX 3050 6GB / CPU Auto-Fallback Ready
+          </span>
+        </div>
       </div>
 
       {/* Mandatory Medical Safety & Non-Diagnostic Disclaimer Banner */}
       <div
         role="region"
         aria-label="Medical Safety Disclaimer"
-        className="bg-amber-950/20 border-b border-amber-500/30 px-6 py-2.5 text-xs text-amber-200/90 flex items-center justify-between gap-4"
+        className="bg-amber-950/20 border-b border-amber-500/30 px-6 py-2 text-xs text-amber-200/90 flex flex-wrap items-center justify-between gap-4"
       >
         <p className="leading-relaxed">
           <strong className="font-semibold text-amber-300">
@@ -276,6 +281,18 @@ export default function App() {
         <span className="font-mono text-[11px] text-amber-300/80 whitespace-nowrap shrink-0">
           AI-Assisted Review Tool · Non-Autonomous
         </span>
+      </div>
+
+      {/* Project Problem Statement & Rural Healthcare Mission Strip */}
+      <div className="bg-[#090D16] border-b border-slate-800/80 px-6 py-2 text-xs text-slate-300">
+        <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3">
+          <p className="leading-relaxed">
+            <span className="font-mono text-cyan-400 font-semibold mr-2">
+              MISSION SCOPE:
+            </span>
+            Develop an offline AI assisted imaging tool that enhances low quality ultrasound videos using denoising and contrast adjustment, then highlights potential cysts or other anomalies using computer vision. The system generates annotated images with confidence scores for remote radiologist review, supporting healthcare workers using affordable ultrasound equipment in resource limited settings.
+          </p>
+        </div>
       </div>
 
       {/* Main Workspace Container */}

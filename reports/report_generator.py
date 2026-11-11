@@ -11,6 +11,14 @@ import os
 from typing import Any, Dict, List
 
 
+PROBLEM_STATEMENT = (
+    "Develop an offline AI assisted imaging tool that enhances low quality ultrasound videos "
+    "using denoising and contrast adjustment, then highlights potential cysts or other anomalies "
+    "using computer vision. The system generates annotated images with confidence scores for "
+    "remote radiologist review, supporting healthcare workers using affordable ultrasound "
+    "equipment in resource limited settings."
+)
+
 MEDICAL_DISCLAIMER = (
     "ScanSure AI is an experimental AI-assisted ultrasound image enhancement and analysis tool. "
     "It does not provide a medical diagnosis. All findings require review by a qualified radiologist."
@@ -67,6 +75,8 @@ def generate_detection_reports(
         "peak_raw_confidence": round(peak_confidence, 4),
         "peak_confidence_frame": peak_frame,
         "validated_threshold": processing_config.get("detection_threshold", 0.55),
+        "annotated_images_generated": len(saved_keyframes),
+        "target_workflow": "Remote Radiologist Review for Rural Healthcare Workers (Low-Cost Portable Ultrasound)",
         "confidence_disclosure": (
             "Reported scores are raw uncalibrated segmentation model scores, NOT calibrated "
             "clinical probabilities. Findings scoring between the validated threshold and "
@@ -81,7 +91,8 @@ def generate_detection_reports(
 
     report_payload = {
         "application": "ScanSure AI",
-        "version": "1.2.0-offline",
+        "version": "1.3.0-production",
+        "problem_statement": PROBLEM_STATEMENT,
         "job_id": job_id,
         "generated_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "medical_disclaimer": MEDICAL_DISCLAIMER,

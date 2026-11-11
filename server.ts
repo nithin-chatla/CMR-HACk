@@ -57,38 +57,45 @@ async function ensureBootstrapped(): Promise<void> {
     if (!fs.existsSync(manifestPath)) {
       await runPythonJsonCommand(['--generate-samples', SAMPLES_DIR]);
     }
-    // Pre-generate default demo job for instant inspection if not yet cached
-    const demoJobDir = path.join(OUTPUTS_DIR, 'demo_case01');
-    const demoReportPath = path.join(demoJobDir, 'ui_result.json');
-    const case01Video = path.join(SAMPLES_DIR, 'breast_ultrasound_cyst_case01.mp4');
-    if (!fs.existsSync(demoReportPath) && fs.existsSync(case01Video)) {
-      const result = await runPythonJsonCommand([
-        '--process',
-        case01Video,
-        '--output-dir',
-        demoJobDir,
-        '--job-id',
-        'demo_case01',
-        '--method',
-        'speckle_bilateral_clahe',
-        '--strength',
-        '0.75',
-        '--threshold',
-        '0.55',
-      ]);
-      fs.writeFileSync(demoReportPath, JSON.stringify(result, null, 2));
-      activeJobs.set('demo_case01', {
-        jobId: 'demo_case01',
-        status: 'completed',
-        result,
-      });
-    } else if (fs.existsSync(demoReportPath)) {
-      const cached = JSON.parse(fs.readFileSync(demoReportPath, 'utf-8'));
-      activeJobs.set('demo_case01', {
-        jobId: 'demo_case01',
-        status: 'completed',
-        result: cached,
-      });
+    const presetCases = [
+      { jobId: 'demo_case01', file: 'breast_ultrasound_cyst_case01.mp4' },
+      { jobId: 'demo_case02', file: 'breast_ultrasound_multifocal_case02.mp4' },
+      { jobId: 'demo_case03', file: 'breast_ultrasound_normal_control03.mp4' },
+    ];
+    for (const preset of presetCases) {
+      const demoJobDir = path.join(OUTPUTS_DIR, preset.jobId);
+      const demoReportPath = path.join(demoJobDir, 'ui_result.json');
+      const videoPath = path.join(SAMPLES_DIR, preset.file);
+      if (fs.existsSync(demoReportPath)) {
+        const cached = JSON.parse(fs.readFileSync(demoReportPath, 'utf-8'));
+        activeJobs.set(preset.jobId, {
+          jobId: preset.jobId,
+          status: 'completed',
+          result: cached,
+        });
+      } else if (fs.existsSync(videoPath)) {
+        const result = await runPythonJsonCommand([
+          '--process',
+          videoPath,
+          '--output-dir',
+          demoJobDir,
+          '--job-id',
+          preset.jobId,
+          '--method',
+          'speckle_bilateral_clahe',
+          '--strength',
+          '0.75',
+          '--threshold',
+          '0.55',
+        ]);
+        result.input_video.video_url = `/api/samples/video/${encodeURIComponent(preset.file)}`;
+        fs.writeFileSync(demoReportPath, JSON.stringify(result, null, 2));
+        activeJobs.set(preset.jobId, {
+          jobId: preset.jobId,
+          status: 'completed',
+          result,
+        });
+      }
     }
   } catch (err) {
     console.error('Bootstrap initialization warning:', err);
@@ -398,6 +405,20 @@ async function startServer() {
       res.json(bench);
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Benchmark evaluation failed' });
+    }
+  });
+
+  // 7b. Air-gapped offline verification endpoint
+  app.get('/api/offline-verify', async (_req, res) => {
+    try {
+      const { stdout } = await execFileAsync('python3', ['offline_verify.py'], {
+        cwd: ROOT_DIR,
+        env: { ...process.env, PYTHONPATH: ROOT_DIR },
+        timeout: 90000,
+      });
+      res.json(JSON.parse(stdout));
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Offline verification check failed' });
     }
   });
 

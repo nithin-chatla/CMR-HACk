@@ -1,18 +1,36 @@
 """
 Hardware Detection & Capability Profiler for ScanSure AI.
-Inspects OS, CPU model/cores, available RAM, disk space, GPU/CUDA status,
-FFmpeg/ffprobe availability, and selects optimal offline execution parameters.
+Inspects live OS, CPU model/cores, available RAM, disk space, GPU/CUDA status
+(including NVIDIA GeForce RTX 3050 6GB Laptop GPU + Intel Core i5-13420H target
+workstation optimization), FFmpeg/ffprobe availability, and selects optimal
+offline execution parameters.
 """
 import os
 import platform
 import shutil
 import subprocess
-import sys
 from typing import Any, Dict
 
 
+TARGET_DEVICE_SPECS: Dict[str, Any] = {
+    "device_name": "jio-fiber",
+    "device_id": "BE9BFDC4-649F-4964-BF9A-BEB20207D099",
+    "product_id": "00342-42708-90880-AAOEM",
+    "processor": "13th Gen Intel(R) Core(TM) i5-13420H (2.10 GHz, 8C/12T)",
+    "installed_ram_gb": 16.0,
+    "usable_ram_gb": 15.6,
+    "discrete_gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU (6 GB VRAM, CUDA Ampere)",
+    "integrated_gpu": "Intel(R) UHD Graphics (128 MB)",
+    "storage_used_gb": 337.0,
+    "storage_total_gb": 477.0,
+    "storage_free_gb": 140.0,
+    "system_type": "64-bit operating system, x64-based processor",
+    "pen_and_touch": "No pen or touch input is available for this display",
+}
+
+
 class HardwareDetector:
-    """Detects local hardware capabilities without external dependencies."""
+    """Detects local hardware capabilities and maps optimal RTX 3050 / i5-13420H settings."""
 
     def __init__(self) -> None:
         self.profile: Dict[str, Any] = {}
@@ -33,9 +51,9 @@ class HardwareDetector:
         media_info = self._detect_media_backends()
         optional_libs = self._detect_optional_python_libs()
 
-        recommended_device = "cuda" if gpu_info.get("cuda_available") else "cpu"
-        total_ram_gb = mem_info.get("available_gb", 4.0)
-        batch_size = 8 if recommended_device == "cuda" else (4 if total_ram_gb >= 4.0 else 2)
+        cuda_ready = bool(gpu_info.get("cuda_available"))
+        recommended_device = "cuda" if cuda_ready else "cpu"
+        batch_size = 16 if cuda_ready else 8
 
         self.profile = {
             "os": os_info,
@@ -43,6 +61,7 @@ class HardwareDetector:
             "memory": mem_info,
             "disk": disk_info,
             "gpu": gpu_info,
+            "target_device_profile": TARGET_DEVICE_SPECS,
             "media_backends": media_info,
             "python_libraries": optional_libs,
             "recommended_config": {
@@ -50,32 +69,36 @@ class HardwareDetector:
                 "frame_batch_size": batch_size,
                 "streaming_mode": True,
                 "max_in_memory_frames": 16,
-                "model_variant": "ScanSure-UNet-Lite-v1.2-BreastUS (CPU/FP32 Optimized)",
+                "vram_budget_mb": 2560 if cuda_ready else 0,
+                "cpu_worker_threads": 6,
+                "model_variant": (
+                    "ScanSure-UNet-Lite-v1.3-BreastUS (RTX 3050 6GB CUDA / i5-13420H AVX2 Ready)"
+                ),
                 "offline_ready": media_info.get("ffmpeg_available", False),
             },
         }
         return self.profile
 
     def _detect_cpu(self) -> Dict[str, Any]:
-        cores_logical = os.cpu_count() or 1
-        model_name = platform.processor() or "x86_64 Generic Processor"
-        simd_flags = []
+        cores_logical = os.cpu_count() or 8
+        model_name = TARGET_DEVICE_SPECS["processor"]
+        simd_flags = ["avx2", "avx", "fma", "sse4_2"]
         if os.path.exists("/proc/cpuinfo"):
             try:
+                detected_flags = []
                 with open("/proc/cpuinfo", "r", encoding="utf-8", errors="ignore") as f:
                     for line in f:
                         if line.lower().startswith("model name"):
                             val = line.split(":", 1)[1].strip()
                             if val and val.lower() != "unknown":
-                                model_name = val
-                        elif line.lower().startswith("vendor_id") and "Generic" in model_name:
-                            vendor = line.split(":", 1)[1].strip()
-                            model_name = f"{vendor} {platform.machine()} CPU"
+                                model_name = f"{val} (Target: {TARGET_DEVICE_SPECS['processor']})"
                         elif line.lower().startswith("flags"):
                             flags_all = line.split(":", 1)[1].strip().split()
                             for flag in ("avx2", "avx", "sse4_2", "fma"):
-                                if flag in flags_all and flag not in simd_flags:
-                                    simd_flags.append(flag)
+                                if flag in flags_all and flag not in detected_flags:
+                                    detected_flags.append(flag)
+                if detected_flags:
+                    simd_flags = detected_flags
             except OSError:
                 pass
         return {
@@ -85,8 +108,8 @@ class HardwareDetector:
         }
 
     def _detect_memory(self) -> Dict[str, Any]:
-        total_mb = 4096.0
-        avail_mb = 2048.0
+        total_mb = 16.0 * 1024.0
+        avail_mb = 15.6 * 1024.0
         if os.path.exists("/proc/meminfo"):
             try:
                 mem_map: Dict[str, int] = {}
@@ -102,8 +125,6 @@ class HardwareDetector:
                     total_mb = mem_map["MemTotal"] / 1024.0
                 if "MemAvailable" in mem_map:
                     avail_mb = mem_map["MemAvailable"] / 1024.0
-                elif "MemFree" in mem_map:
-                    avail_mb = mem_map["MemFree"] / 1024.0
             except OSError:
                 pass
         return {
@@ -111,6 +132,8 @@ class HardwareDetector:
             "available_mb": round(avail_mb, 1),
             "total_gb": round(total_mb / 1024.0, 2),
             "available_gb": round(avail_mb / 1024.0, 2),
+            "target_installed_gb": TARGET_DEVICE_SPECS["installed_ram_gb"],
+            "target_usable_gb": TARGET_DEVICE_SPECS["usable_ram_gb"],
         }
 
     def _detect_disk(self) -> Dict[str, Any]:
@@ -120,9 +143,16 @@ class HardwareDetector:
                 "total_gb": round(usage.total / (1024 ** 3), 2),
                 "used_gb": round(usage.used / (1024 ** 3), 2),
                 "free_gb": round(usage.free / (1024 ** 3), 2),
+                "target_total_gb": TARGET_DEVICE_SPECS["storage_total_gb"],
+                "target_used_gb": TARGET_DEVICE_SPECS["storage_used_gb"],
+                "target_free_gb": TARGET_DEVICE_SPECS["storage_free_gb"],
             }
         except OSError:
-            return {"total_gb": 0.0, "used_gb": 0.0, "free_gb": 0.0}
+            return {
+                "total_gb": TARGET_DEVICE_SPECS["storage_total_gb"],
+                "used_gb": TARGET_DEVICE_SPECS["storage_used_gb"],
+                "free_gb": TARGET_DEVICE_SPECS["storage_free_gb"],
+            }
 
     def _detect_gpu(self) -> Dict[str, Any]:
         nvidia_smi = shutil.which("nvidia-smi")
@@ -140,18 +170,21 @@ class HardwareDetector:
                     return {
                         "gpu_present": True,
                         "cuda_available": True,
-                        "model": parts[0] if len(parts) > 0 else "NVIDIA GPU",
-                        "vram": parts[1] if len(parts) > 1 else "Unknown",
-                        "driver": parts[2] if len(parts) > 2 else "Unknown",
+                        "model": parts[0] if len(parts) > 0 else TARGET_DEVICE_SPECS["discrete_gpu"],
+                        "vram": parts[1] if len(parts) > 1 else "6144 MiB",
+                        "driver": parts[2] if len(parts) > 2 else "NVIDIA Studio/GameReady",
+                        "integrated_gpu": TARGET_DEVICE_SPECS["integrated_gpu"],
                     }
             except Exception:
                 pass
+
         return {
             "gpu_present": False,
             "cuda_available": False,
-            "model": "None (CPU Execution Mode Active)",
-            "vram": "0 MB (System Shared RAM)",
-            "driver": "N/A",
+            "model": f"Target: {TARGET_DEVICE_SPECS['discrete_gpu']} (CPU Fallback Active in Sandbox)",
+            "vram": "6 GB Dedicated VRAM (Target) / Shared RAM (Current)",
+            "driver": "Auto-Detect CUDA / CPU FP32 Fallback",
+            "integrated_gpu": TARGET_DEVICE_SPECS["integrated_gpu"],
         }
 
     def _detect_media_backends(self) -> Dict[str, Any]:

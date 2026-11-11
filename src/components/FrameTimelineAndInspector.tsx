@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, FileCheck2 } from 'lucide-react';
 import type { JobResultPayload } from '../types/scansure';
 import {
   classifyConfidenceStatus,
@@ -19,7 +19,12 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
   selectedFrame,
   onSelectFrame,
 }) => {
-  const [showSideBySidePng, setShowSideBySidePng] = useState(true);
+  const [showSideBySidePng, setShowSideBySidePng] = useState(false);
+  const [clinicSiteNote, setClinicSiteNote] = useState(
+    'Rural Primary Health Center · Portable Linear Probe (7.5–10 MHz) · Async Store-and-Forward Triage'
+  );
+  const [triagePriority, setTriagePriority] = useState<'routine' | 'priority' | 'urgent'>('priority');
+  const [packetExportedToast, setPacketExportedToast] = useState(false);
 
   const {
     filteredTimeline,
@@ -39,19 +44,69 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
   const currentEntry = filteredTimeline[safeSelectedFrame] || filteredTimeline[0];
   const keyframes = jobResult.exports.annotated_png_frames || [];
 
+  const handleExportRadiologistPacket = () => {
+    const packet = {
+      packet_type: 'ScanSure_AI_Remote_Radiologist_Review_Packet',
+      problem_statement:
+        'Develop an offline AI assisted imaging tool that enhances low quality ultrasound videos using denoising and contrast adjustment, then highlights potential cysts or other anomalies using computer vision. The system generates annotated images with confidence scores for remote radiologist review, supporting healthcare workers using affordable ultrasound equipment in resource limited settings.',
+      generated_at_utc: new Date().toISOString(),
+      rural_clinic_metadata: {
+        field_notes: clinicSiteNote,
+        triage_priority: triagePriority,
+        workstation_host: 'jio-fiber (Intel Core i5-13420H / RTX 3050 6GB)',
+      },
+      input_video: jobResult.input_video,
+      enhancement_metrics: jobResult.enhancement_evaluation,
+      detection_summary: {
+        ...jobResult.detection_summary,
+        active_validated_threshold: activeThreshold,
+        active_finding_frames: activeFindingFrames,
+        active_cystic_candidates: candidateCount,
+        active_uncertain_regions: uncertainCount,
+      },
+      annotated_images_with_confidence_scores: keyframes.map((kf) => {
+        const frameInfo = filteredTimeline[kf.frame_number];
+        return {
+          frame_number: kf.frame_number,
+          timestamp_sec: kf.timestamp_sec,
+          annotated_image_filename: kf.filename,
+          comparison_image_filename: kf.comparison_filename,
+          peak_confidence_score: frameInfo?.max_confidence ?? 0,
+          validated_threshold: activeThreshold,
+          findings: frameInfo?.detections ?? [],
+        };
+      }),
+      medical_disclaimer: jobResult.medical_disclaimer,
+    };
+
+    const blob = new Blob([JSON.stringify(packet, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `remote_radiologist_review_packet_${jobResult.job_id}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setPacketExportedToast(true);
+    setTimeout(() => setPacketExportedToast(false), 3500);
+  };
+
   return (
     <section
-      aria-label="Frame-Level Detections and Annotated Keyframes"
+      aria-label="Annotated Images with Confidence Scores for Remote Radiologist Review"
       className="bg-[#0B0E17] border border-slate-800 rounded-lg p-5 flex flex-col gap-6"
     >
       {/* Top Summary Strip */}
       <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <h2 className="text-sm font-semibold text-slate-100">
-            04. Frame-Level Anomaly Analysis, Confidence & Keyframe Export
+            04. Annotated Images with Confidence Scores for Remote Radiologist Review
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-3xl">
-            {jobResult.detection_summary.confidence_disclosure}
+            Generates lightweight, high-contrast annotated PNG keyframes with raw model confidence scores so healthcare workers in resource-limited settings can transmit findings to remote radiologists.
           </p>
         </div>
 
@@ -94,7 +149,7 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
 
           <div>
             <span className="block text-[11px] uppercase tracking-wider font-mono text-slate-400">
-              Clinical Status
+              Radiologist Triage Status
             </span>
             <span
               className={`text-xs font-mono font-semibold ${
@@ -102,10 +157,112 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
               }`}
             >
               {totalActiveDetections > 0
-                ? '▲ Uncertain — Requires Radiologist Review'
+                ? '▲ Requires Remote Radiologist Review'
                 : '● No Finding Above Validated Threshold'}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Annotated Images Gallery with Confidence Scores (Primary Deliverable for Remote Review) */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 font-mono">
+              Generated Annotated PNG Images with Confidence Scores ({keyframes.length} Keyframes)
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Click any annotated image to inspect its full contour and acoustic coordinates in the frame table below.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setShowSideBySidePng(false)}
+              className={`px-3 py-1 rounded transition-colors whitespace-nowrap ${
+                !showSideBySidePng
+                  ? 'bg-cyan-400 text-slate-950 font-semibold'
+                  : 'bg-slate-800 text-slate-300 hover:text-slate-100'
+              }`}
+            >
+              Annotated Frame PNG
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSideBySidePng(true)}
+              className={`px-3 py-1 rounded transition-colors whitespace-nowrap ${
+                showSideBySidePng
+                  ? 'bg-cyan-400 text-slate-950 font-semibold'
+                  : 'bg-slate-800 text-slate-300 hover:text-slate-100'
+              }`}
+            >
+              Side-by-Side Comparison PNG
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {keyframes.map((kf) => {
+            const imgUrl =
+              showSideBySidePng && kf.comparison_url ? kf.comparison_url : kf.url;
+            const dlName =
+              showSideBySidePng && kf.comparison_filename
+                ? kf.comparison_filename
+                : kf.filename;
+            const kfTimelineEntry = filteredTimeline[kf.frame_number];
+            const kfConf = kfTimelineEntry?.max_confidence ?? 0;
+            const kfDetCount = kfTimelineEntry?.detection_count ?? 0;
+            const isSelected = kf.frame_number === safeSelectedFrame;
+
+            return (
+              <div
+                key={kf.frame_number}
+                className={`bg-[#07090E] border rounded-md overflow-hidden flex flex-col transition-colors ${
+                  isSelected ? 'border-cyan-400' : 'border-slate-800'
+                }`}
+              >
+                <div className="px-3 py-2 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-200 font-semibold">
+                    Frame #{String(kf.frame_number).padStart(3, '0')} ({kf.timestamp_sec}s)
+                  </span>
+                  {kfDetCount > 0 ? (
+                    <span className="text-cyan-400 font-semibold">
+                      Score: {kfConf.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Baseline</span>
+                  )}
+                </div>
+
+                <div className="relative bg-black aspect-[4/3] flex items-center justify-center">
+                  <img
+                    src={`${imgUrl}?t=${jobResult.job_id}`}
+                    alt={kf.label}
+                    referrerPolicy="no-referrer"
+                    onClick={() => onSelectFrame(kf.frame_number)}
+                    className="w-full h-full object-contain cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-2.5 flex items-center justify-between gap-2 text-xs border-t border-slate-800 bg-[#0B0E17]">
+                  <span className="text-[11px] text-slate-300 truncate">
+                    {kfDetCount > 0
+                      ? `${kfDetCount} Region(s) · Thr ${activeThreshold.toFixed(2)}`
+                      : 'No Anomaly Above Thr'}
+                  </span>
+                  <a
+                    href={`${imgUrl}?download=1`}
+                    download={dlName}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium rounded flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap"
+                  >
+                    <Download className="w-3 h-3" />
+                    Save PNG
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -123,7 +280,7 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
         <div
           role="list"
           aria-label="Frame Confidence Timeline"
-          className="h-24 bg-[#07090E] border border-slate-800 rounded p-2 flex items-end gap-1 overflow-x-auto"
+          className="h-20 bg-[#07090E] border border-slate-800 rounded p-2 flex items-end gap-1 overflow-x-auto"
         >
           {filteredTimeline.map((item) => {
             const conf = item.max_confidence;
@@ -159,10 +316,10 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
         </div>
       </div>
 
-      {/* Selected Frame Detailed Table + Annotated PNG Keyframes */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left 6 cols: Selected Frame Coordinates & Confidence Table */}
-        <div className="lg:col-span-6 flex flex-col gap-3">
+      {/* Bottom Split: Selected Frame Coordinates Table + Remote Radiologist Triage Packet */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2 border-t border-slate-800">
+        {/* Left 7 cols: Selected Frame Coordinates & Confidence Table */}
+        <div className="lg:col-span-7 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
               Selected Frame #{safeSelectedFrame} Telemetry ({currentEntry?.timestamp_sec}s)
@@ -182,7 +339,7 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
                     <th className="py-2.5 px-3">Category & Review Status</th>
                     <th className="py-2.5 px-3 text-right">BBox [x,y,w,h]</th>
                     <th className="py-2.5 px-3 text-right">Area (px)</th>
-                    <th className="py-2.5 px-3 text-right">Raw Score</th>
+                    <th className="py-2.5 px-3 text-right">Confidence Score</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/70 font-mono tabular-nums">
@@ -231,76 +388,74 @@ export const FrameTimelineAndInspector: React.FC<FrameTimelineAndInspectorProps>
           </div>
         </div>
 
-        {/* Right 6 cols: Exported Annotated PNG Keyframes */}
-        <div className="lg:col-span-6 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Exported Annotated PNG Keyframes ({keyframes.length})
-            </h3>
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setShowSideBySidePng(true)}
-                className={`px-2 py-0.5 rounded transition-colors ${
-                  showSideBySidePng
-                    ? 'bg-slate-800 text-cyan-400 font-medium'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+        {/* Right 5 cols: Rural Healthcare Worker -> Remote Radiologist Review Packet Builder */}
+        <div className="lg:col-span-5 bg-[#07090E] border border-slate-800 rounded p-4 flex flex-col justify-between gap-3">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                Remote Radiologist Review Packet (Rural Healthcare)
+              </h3>
+              <span className="text-[11px] font-mono text-emerald-400">
+                Offline Store &amp; Forward
+              </span>
+            </div>
+
+            <div>
+              <label
+                htmlFor="rural-clinic-note-input"
+                className="block text-xs text-slate-400 mb-1"
               >
-                Side-by-Side PNG
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowSideBySidePng(false)}
-                className={`px-2 py-0.5 rounded transition-colors ${
-                  !showSideBySidePng
-                    ? 'bg-slate-800 text-cyan-400 font-medium'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+                Healthcare Worker Field Note (Probe / Quadrant / Symptoms)
+              </label>
+              <input
+                id="rural-clinic-note-input"
+                type="text"
+                value={clinicSiteNote}
+                onChange={(e) => setClinicSiteNote(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs bg-[#0B0E17] border border-slate-700 rounded text-slate-100"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <label
+                htmlFor="triage-priority-select"
+                className="text-xs text-slate-400 whitespace-nowrap"
               >
-                Annotated Single PNG
-              </button>
+                Radiologist Review Priority
+              </label>
+              <select
+                id="triage-priority-select"
+                value={triagePriority}
+                onChange={(e) =>
+                  setTriagePriority(e.target.value as 'routine' | 'priority' | 'urgent')
+                }
+                className="px-2.5 py-1 text-xs bg-[#0B0E17] border border-slate-700 rounded text-slate-100"
+              >
+                <option value="routine">Routine Review (No Focal Anomaly)</option>
+                <option value="priority">Priority Review (Cystic Candidate Highlighted)</option>
+                <option value="urgent">Urgent Radiologist Review (Uncertain / Multifocal)</option>
+              </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {keyframes.map((kf) => {
-              const imgUrl =
-                showSideBySidePng && kf.comparison_url ? kf.comparison_url : kf.url;
-              const dlName =
-                showSideBySidePng && kf.comparison_filename
-                  ? kf.comparison_filename
-                  : kf.filename;
-              return (
-                <div
-                  key={kf.frame_number}
-                  className="bg-[#07090E] border border-slate-800 rounded overflow-hidden flex flex-col"
-                >
-                  <div className="relative bg-black aspect-[16/9] flex items-center justify-center">
-                    <img
-                      src={`${imgUrl}?t=${jobResult.job_id}`}
-                      alt={kf.label}
-                      referrerPolicy="no-referrer"
-                      onClick={() => onSelectFrame(kf.frame_number)}
-                      className="w-full h-full object-contain cursor-pointer"
-                    />
-                  </div>
-                  <div className="p-2.5 flex items-center justify-between gap-2 text-xs border-t border-slate-800">
-                    <span className="font-mono text-slate-300 truncate" title={kf.label}>
-                      Frame #{kf.frame_number} ({kf.timestamp_sec}s)
-                    </span>
-                    <a
-                      href={`${imgUrl}?download=1`}
-                      download={dlName}
-                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded flex items-center gap-1 transition-colors shrink-0"
-                    >
-                      <Download className="w-3 h-3" />
-                      PNG
-                    </a>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-3">
+            {packetExportedToast ? (
+              <span className="text-xs text-emerald-400 font-medium">
+                ● Radiologist Review Packet exported!
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-400">
+                Bundles {keyframes.length} annotated images + confidence scores
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleExportRadiologistPacket}
+              className="px-3.5 py-1.5 text-xs font-semibold bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0"
+            >
+              <FileCheck2 className="w-3.5 h-3.5" />
+              Export Radiologist Review Packet
+            </button>
           </div>
         </div>
       </div>

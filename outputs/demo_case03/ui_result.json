@@ -1,0 +1,794 @@
+{
+  "job_id": "demo_case03",
+  "generated_at_utc": "2026-11-11T15:30:04.353463+00:00",
+  "medical_disclaimer": "ScanSure AI is an experimental AI-assisted ultrasound image enhancement and analysis tool. It does not provide a medical diagnosis. All findings require review by a qualified radiologist.",
+  "input_video": {
+    "filename": "breast_ultrasound_normal_control03.mp4",
+    "filepath": "/app/applet/data/samples/breast_ultrasound_normal_control03.mp4",
+    "extension": ".mp4",
+    "file_size_bytes": 1272431,
+    "file_size_mb": 1.213,
+    "width": 320,
+    "height": 240,
+    "resolution": "320x240",
+    "fps": 15.0,
+    "fps_rational": "15/1",
+    "frame_count": 45,
+    "duration_sec": 3.0,
+    "video_codec": "h264",
+    "pixel_format": "yuv420p",
+    "has_audio": false,
+    "audio_codec": null,
+    "valid": true,
+    "video_url": "/api/samples/video/breast_ultrasound_normal_control03.mp4"
+  },
+  "audio_stream_report": "No audio stream present in input video.",
+  "processing_configuration": {
+    "enhancement_method": "speckle_bilateral_clahe",
+    "enhancement_strength": 0.75,
+    "clahe_clip_limit": 2.2,
+    "gamma": 1.05,
+    "temporal_alpha": 0.28,
+    "ai_detection_enabled": true,
+    "detection_threshold": 0.55,
+    "temporal_smoothing": true,
+    "output_resolution": "320x240",
+    "requested_device": "auto",
+    "executed_device": "cpu"
+  },
+  "processing_duration_sec": 31.039,
+  "model_metadata": {
+    "model_name": "ScanSure-UNet-Lite-v1.2-BreastUS",
+    "model_version": "1.2.0-busi-calibrated",
+    "architecture": "Multi-Scale Integral Encoder-Decoder Segmentation Network (UNet-Lite)",
+    "supported_anatomy": "Breast Ultrasound (B-Mode Linear Array 5-12 MHz)",
+    "unsupported_anatomies": [
+      "Abdominal / Hepatic Ultrasound",
+      "Obstetric / Fetal Ultrasound",
+      "Thyroid / Carotid Doppler",
+      "Cardiac Echocardiography"
+    ],
+    "dataset_provenance": {
+      "reference_distribution": "BUSI (Breast Ultrasound Images Dataset, Al-Dhabyani et al., 2020) + Physics-Grounded B-Mode Acoustic Phantom Sequences",
+      "modality": "B-mode Grayscale Breast Ultrasound",
+      "classes": [
+        "Normal Parenchyma",
+        "Cystic / Anechoic Lesion Candidate",
+        "Uncertain Hypoechoic Mass"
+      ],
+      "temporal_validation_limitation": "Public breast ultrasound datasets (such as BUSI, 780 still images across normal, benign, and malignant cases) contain static 2D keyframes rather than continuous cine loops. While temporal consistency is validated on synthetic acoustic cine phantoms, clinical video-level temporal validation requires prospective multi-center cine loop trials."
+    },
+    "calibration": {
+      "is_calibrated_probability": false,
+      "score_type": "Unnormalized Multi-Scale Segmentation Logit Sigmoid Score (Raw Model Confidence)",
+      "validated_threshold": 0.55,
+      "uncertain_review_upper_bound": 0.72,
+      "calibration_note": "Raw neural/feature segmentation scores are reported alongside the empirically validated threshold (0.55). Detections scoring between 0.55 and 0.72 or exhibiting heterogeneous internal echoes are explicitly flagged as 'Uncertain \u2014 Requires Radiologist Review'."
+    },
+    "execution_device": "cpu",
+    "weights_filepath": "/app/applet/models/weights/scansure_unet_breast_v1.json"
+  },
+  "detection_summary": {
+    "total_frames_processed": 45,
+    "frames_with_findings": 0,
+    "frames_without_findings": 45,
+    "total_region_instances": 0,
+    "cystic_candidate_instances": 0,
+    "uncertain_review_instances": 0,
+    "peak_raw_confidence": 0.0,
+    "peak_confidence_frame": 0,
+    "validated_threshold": 0.55,
+    "confidence_disclosure": "Reported scores are raw uncalibrated segmentation model scores, NOT calibrated clinical probabilities. Findings scoring between the validated threshold and 0.72 are flagged as 'Uncertain \u2014 Requires Radiologist Review'.",
+    "clinical_recommendation": "No region detected above validated threshold \u2014 Standard Radiologist Review Recommended."
+  },
+  "enhancement_evaluation": {
+    "mean_psnr_db": 22.6,
+    "mean_ssim": 0.9244,
+    "edge_preservation_index": 0.9438,
+    "input_enl_speckle_index": 47.94,
+    "enhanced_enl_speckle_index": 52.95,
+    "speckle_suppression_gain_pct": 10.5,
+    "temporal_flicker_mad": 13.13,
+    "clinical_interpretation_note": "PSNR and SSIM measure structural fidelity relative to the raw B-mode acquisition, while ENL (Equivalent Number of Looks) and EPI (Edge Preservation Index) quantify speckle reduction and anatomical boundary retention. Higher quantitative metrics alone do not establish diagnostic efficacy and require radiologist review."
+  },
+  "video_integrity_verification": {
+    "integrity_verified": true,
+    "frame_count_exact_match": true,
+    "fps_exact_match": true,
+    "resolution_exact_match": true,
+    "synchronized_comparison_verified": true,
+    "input_summary": {
+      "frame_count": 45,
+      "fps": 15.0,
+      "duration_sec": 3.0,
+      "resolution": "320x240"
+    },
+    "outputs": {
+      "enhanced_video": {
+        "filename": "enhanced_video.mp4",
+        "frame_count": 45,
+        "fps": 15.0,
+        "duration_sec": 3.0,
+        "resolution": "320x240",
+        "file_size_mb": 0.874
+      },
+      "annotated_video": {
+        "filename": "annotated_video.mp4",
+        "frame_count": 45,
+        "fps": 15.0,
+        "duration_sec": 3.0,
+        "resolution": "320x240",
+        "file_size_mb": 0.816
+      },
+      "comparison_video": {
+        "filename": "comparison_video.mp4",
+        "frame_count": 45,
+        "fps": 15.0,
+        "duration_sec": 3.0,
+        "resolution": "640x240",
+        "file_size_mb": 1.876
+      }
+    },
+    "discrepancy_notes": []
+  },
+  "exports": {
+    "job_id": "demo_case03",
+    "output_directory": "/app/applet/outputs/demo_case03",
+    "videos": {
+      "enhanced_video": {
+        "filename": "enhanced_video.mp4",
+        "url": "/api/outputs/demo_case03/enhanced_video.mp4",
+        "path": "/app/applet/outputs/demo_case03/enhanced_video.mp4"
+      },
+      "annotated_video": {
+        "filename": "annotated_video.mp4",
+        "url": "/api/outputs/demo_case03/annotated_video.mp4",
+        "path": "/app/applet/outputs/demo_case03/annotated_video.mp4"
+      },
+      "comparison_video": {
+        "filename": "comparison_video.mp4",
+        "url": "/api/outputs/demo_case03/comparison_video.mp4",
+        "path": "/app/applet/outputs/demo_case03/comparison_video.mp4"
+      }
+    },
+    "reports": {
+      "json": {
+        "filename": "detection_report.json",
+        "url": "/api/outputs/demo_case03/detection_report.json",
+        "path": "/app/applet/outputs/demo_case03/detection_report.json"
+      },
+      "csv": {
+        "filename": "detection_report.csv",
+        "url": "/api/outputs/demo_case03/detection_report.csv",
+        "path": "/app/applet/outputs/demo_case03/detection_report.csv"
+      }
+    },
+    "annotated_png_frames": [
+      {
+        "frame_number": 0,
+        "timestamp_sec": 0.0,
+        "label": "Frame #0 (0.00s) \u2014 Baseline Enhanced",
+        "filename": "frame_0000_annotated.png",
+        "url": "/api/outputs/demo_case03/frames/frame_0000_annotated.png",
+        "comparison_filename": "frame_0000_comparison.png",
+        "comparison_url": "/api/outputs/demo_case03/frames/frame_0000_comparison.png"
+      },
+      {
+        "frame_number": 15,
+        "timestamp_sec": 1.0,
+        "label": "Frame #15 (1.00s) \u2014 Baseline Enhanced",
+        "filename": "frame_0015_annotated.png",
+        "url": "/api/outputs/demo_case03/frames/frame_0015_annotated.png",
+        "comparison_filename": "frame_0015_comparison.png",
+        "comparison_url": "/api/outputs/demo_case03/frames/frame_0015_comparison.png"
+      },
+      {
+        "frame_number": 30,
+        "timestamp_sec": 2.0,
+        "label": "Frame #30 (2.00s) \u2014 Baseline Enhanced",
+        "filename": "frame_0030_annotated.png",
+        "url": "/api/outputs/demo_case03/frames/frame_0030_annotated.png",
+        "comparison_filename": "frame_0030_comparison.png",
+        "comparison_url": "/api/outputs/demo_case03/frames/frame_0030_comparison.png"
+      },
+      {
+        "frame_number": 44,
+        "timestamp_sec": 2.9333,
+        "label": "Frame #44 (2.93s) \u2014 Baseline Enhanced",
+        "filename": "frame_0044_annotated.png",
+        "url": "/api/outputs/demo_case03/frames/frame_0044_annotated.png",
+        "comparison_filename": "frame_0044_comparison.png",
+        "comparison_url": "/api/outputs/demo_case03/frames/frame_0044_comparison.png"
+      }
+    ]
+  },
+  "detections": [],
+  "frame_by_frame_timeline": [
+    {
+      "frame_number": 0,
+      "timestamp_sec": 0.0,
+      "quality": {
+        "psnr_db": 22.65,
+        "ssim": 0.9264,
+        "enl_input": 43.44,
+        "enl_enhanced": 47.99
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 1,
+      "timestamp_sec": 0.0667,
+      "quality": {
+        "psnr_db": 22.66,
+        "ssim": 0.9246,
+        "enl_input": 43.35,
+        "enl_enhanced": 39.46
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 2,
+      "timestamp_sec": 0.1333,
+      "quality": {
+        "psnr_db": 22.57,
+        "ssim": 0.9234,
+        "enl_input": 40.48,
+        "enl_enhanced": 35.57
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 3,
+      "timestamp_sec": 0.2,
+      "quality": {
+        "psnr_db": 22.58,
+        "ssim": 0.9239,
+        "enl_input": 47.64,
+        "enl_enhanced": 45.04
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 4,
+      "timestamp_sec": 0.2667,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9249,
+        "enl_input": 45.05,
+        "enl_enhanced": 39.79
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 5,
+      "timestamp_sec": 0.3333,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9246,
+        "enl_input": 49.83,
+        "enl_enhanced": 55.66
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 6,
+      "timestamp_sec": 0.4,
+      "quality": {
+        "psnr_db": 22.63,
+        "ssim": 0.9243,
+        "enl_input": 50.2,
+        "enl_enhanced": 47.73
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 7,
+      "timestamp_sec": 0.4667,
+      "quality": {
+        "psnr_db": 22.65,
+        "ssim": 0.925,
+        "enl_input": 47.18,
+        "enl_enhanced": 51.18
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 8,
+      "timestamp_sec": 0.5333,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.924,
+        "enl_input": 48.15,
+        "enl_enhanced": 59.17
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 9,
+      "timestamp_sec": 0.6,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9253,
+        "enl_input": 51.48,
+        "enl_enhanced": 66.26
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 10,
+      "timestamp_sec": 0.6667,
+      "quality": {
+        "psnr_db": 22.51,
+        "ssim": 0.9236,
+        "enl_input": 41.38,
+        "enl_enhanced": 37.01
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 11,
+      "timestamp_sec": 0.7333,
+      "quality": {
+        "psnr_db": 22.55,
+        "ssim": 0.9232,
+        "enl_input": 47.14,
+        "enl_enhanced": 54.38
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 12,
+      "timestamp_sec": 0.8,
+      "quality": {
+        "psnr_db": 22.62,
+        "ssim": 0.925,
+        "enl_input": 56.7,
+        "enl_enhanced": 73.41
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 13,
+      "timestamp_sec": 0.8667,
+      "quality": {
+        "psnr_db": 22.59,
+        "ssim": 0.9242,
+        "enl_input": 44.32,
+        "enl_enhanced": 43.45
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 14,
+      "timestamp_sec": 0.9333,
+      "quality": {
+        "psnr_db": 22.59,
+        "ssim": 0.9234,
+        "enl_input": 49.2,
+        "enl_enhanced": 51.54
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 15,
+      "timestamp_sec": 1.0,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9246,
+        "enl_input": 46.96,
+        "enl_enhanced": 46.15
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 16,
+      "timestamp_sec": 1.0667,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9248,
+        "enl_input": 42.07,
+        "enl_enhanced": 37.65
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 17,
+      "timestamp_sec": 1.1333,
+      "quality": {
+        "psnr_db": 22.59,
+        "ssim": 0.9245,
+        "enl_input": 51.17,
+        "enl_enhanced": 55.68
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 18,
+      "timestamp_sec": 1.2,
+      "quality": {
+        "psnr_db": 22.63,
+        "ssim": 0.924,
+        "enl_input": 48.38,
+        "enl_enhanced": 54.17
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 19,
+      "timestamp_sec": 1.2667,
+      "quality": {
+        "psnr_db": 22.56,
+        "ssim": 0.9245,
+        "enl_input": 49.66,
+        "enl_enhanced": 63.08
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 20,
+      "timestamp_sec": 1.3333,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9246,
+        "enl_input": 51.9,
+        "enl_enhanced": 71.78
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 21,
+      "timestamp_sec": 1.4,
+      "quality": {
+        "psnr_db": 22.56,
+        "ssim": 0.9242,
+        "enl_input": 38.13,
+        "enl_enhanced": 34.56
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 22,
+      "timestamp_sec": 1.4667,
+      "quality": {
+        "psnr_db": 22.7,
+        "ssim": 0.9248,
+        "enl_input": 51.98,
+        "enl_enhanced": 54.66
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 23,
+      "timestamp_sec": 1.5333,
+      "quality": {
+        "psnr_db": 22.7,
+        "ssim": 0.9251,
+        "enl_input": 49.71,
+        "enl_enhanced": 56.47
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 24,
+      "timestamp_sec": 1.6,
+      "quality": {
+        "psnr_db": 22.63,
+        "ssim": 0.9255,
+        "enl_input": 48.93,
+        "enl_enhanced": 49.55
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 25,
+      "timestamp_sec": 1.6667,
+      "quality": {
+        "psnr_db": 22.57,
+        "ssim": 0.9235,
+        "enl_input": 54.86,
+        "enl_enhanced": 66.17
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 26,
+      "timestamp_sec": 1.7333,
+      "quality": {
+        "psnr_db": 22.58,
+        "ssim": 0.9235,
+        "enl_input": 51.41,
+        "enl_enhanced": 56.52
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 27,
+      "timestamp_sec": 1.8,
+      "quality": {
+        "psnr_db": 22.54,
+        "ssim": 0.9235,
+        "enl_input": 57.08,
+        "enl_enhanced": 98.67
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 28,
+      "timestamp_sec": 1.8667,
+      "quality": {
+        "psnr_db": 22.62,
+        "ssim": 0.9253,
+        "enl_input": 51.27,
+        "enl_enhanced": 58.74
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 29,
+      "timestamp_sec": 1.9333,
+      "quality": {
+        "psnr_db": 22.58,
+        "ssim": 0.9232,
+        "enl_input": 45.16,
+        "enl_enhanced": 44.9
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 30,
+      "timestamp_sec": 2.0,
+      "quality": {
+        "psnr_db": 22.54,
+        "ssim": 0.9237,
+        "enl_input": 43.85,
+        "enl_enhanced": 40.27
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 31,
+      "timestamp_sec": 2.0667,
+      "quality": {
+        "psnr_db": 22.55,
+        "ssim": 0.9243,
+        "enl_input": 56.36,
+        "enl_enhanced": 66.5
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 32,
+      "timestamp_sec": 2.1333,
+      "quality": {
+        "psnr_db": 22.59,
+        "ssim": 0.9247,
+        "enl_input": 48.66,
+        "enl_enhanced": 50.65
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 33,
+      "timestamp_sec": 2.2,
+      "quality": {
+        "psnr_db": 22.52,
+        "ssim": 0.9236,
+        "enl_input": 46.65,
+        "enl_enhanced": 47.78
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 34,
+      "timestamp_sec": 2.2667,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9247,
+        "enl_input": 49.98,
+        "enl_enhanced": 51.49
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 35,
+      "timestamp_sec": 2.3333,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9248,
+        "enl_input": 46.64,
+        "enl_enhanced": 58.59
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 36,
+      "timestamp_sec": 2.4,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9245,
+        "enl_input": 41.13,
+        "enl_enhanced": 40.86
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 37,
+      "timestamp_sec": 2.4667,
+      "quality": {
+        "psnr_db": 22.62,
+        "ssim": 0.9254,
+        "enl_input": 49.34,
+        "enl_enhanced": 57.34
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 38,
+      "timestamp_sec": 2.5333,
+      "quality": {
+        "psnr_db": 22.57,
+        "ssim": 0.9246,
+        "enl_input": 46.26,
+        "enl_enhanced": 51.08
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 39,
+      "timestamp_sec": 2.6,
+      "quality": {
+        "psnr_db": 22.58,
+        "ssim": 0.9244,
+        "enl_input": 53.36,
+        "enl_enhanced": 62.89
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 40,
+      "timestamp_sec": 2.6667,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9247,
+        "enl_input": 47.84,
+        "enl_enhanced": 49.13
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 41,
+      "timestamp_sec": 2.7333,
+      "quality": {
+        "psnr_db": 22.61,
+        "ssim": 0.9241,
+        "enl_input": 45.15,
+        "enl_enhanced": 57.67
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 42,
+      "timestamp_sec": 2.8,
+      "quality": {
+        "psnr_db": 22.64,
+        "ssim": 0.9238,
+        "enl_input": 46.79,
+        "enl_enhanced": 54.98
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 43,
+      "timestamp_sec": 2.8667,
+      "quality": {
+        "psnr_db": 22.6,
+        "ssim": 0.9241,
+        "enl_input": 44.72,
+        "enl_enhanced": 49.46
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    },
+    {
+      "frame_number": 44,
+      "timestamp_sec": 2.9333,
+      "quality": {
+        "psnr_db": 22.54,
+        "ssim": 0.9244,
+        "enl_input": 46.22,
+        "enl_enhanced": 47.57
+      },
+      "detection_count": 0,
+      "max_confidence": 0.0,
+      "detections": []
+    }
+  ],
+  "status": "completed"
+}

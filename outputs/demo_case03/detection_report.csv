@@ -1,0 +1,1 @@
+frame_number,timestamp_sec,track_id,category,is_uncertain,raw_confidence,validated_threshold,confidence_type,bbox_x,bbox_y,bbox_w,bbox_h,centroid_x,centroid_y,area_px,solidity,mean_echogenicity,temporal_persistence_frames,model_version,clinical_review_note
