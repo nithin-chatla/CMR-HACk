@@ -418,8 +418,3 @@ PYTHONPATH=. python3 offline_verify.py
 ```
 
 ---
-
-## 12. Clinical Safety & Non-Diagnostic Disclaimer
-
-> **IMPORTANT MEDICAL DISCLAIMER:**  
-> **ScanSure AI** is an experimental AI-assisted ultrasound image enhancement and triage support tool designed to assist healthcare workers in resource-limited settings when preparing scans for remote radiologist review. **It is NOT an autonomous diagnostic device and does NOT provide a medical diagnosis.** Model confidence scores are uncalibrated activation scores validated strictly on B-mode breast ultrasound reference distributions and must not be interpreted as calibrated clinical probabilities of malignancy or applied to unsupported anatomical regions (such as obstetric, cardiac, or abdominal imaging). All enhanced videos, highlighted regions, and exported reports require final review and sign-off by a qualified radiologist.
