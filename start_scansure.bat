@@ -61,18 +61,24 @@ if exist "requirements.txt" (
     %PYTHON_BIN% -m pip install -r requirements.txt --quiet --disable-pip-version-check 2>nul
 )
 
-REM 5. Install Node.js dependencies on first run if node_modules is missing
-if not exist "node_modules" (
+REM 5. Install Node.js dependencies if tsx or vite binaries are missing in node_modules\.bin
+if not exist "node_modules\.bin\tsx.cmd" (
     echo.
-    echo [2/4] First-time setup: Installing Node.js packages ^(npm install --legacy-peer-deps^)...
+    echo [2/4] Installing Node.js packages ^(npm install --legacy-peer-deps^)...
     call npm install --legacy-peer-deps
     if !ERRORLEVEL! neq 0 (
-        echo [ERROR] npm install failed. Please check your Node.js installation.
+        echo [ERROR] npm install failed. Please check your internet connection and Node.js installation.
         pause
         exit /b 1
     )
 ) else (
-    echo [2/4] Node.js dependencies already installed ^(node_modules found^).
+    echo [2/4] Node.js dependencies verified ^(tsx ^& vite ready^).
+)
+
+REM Ensure Rolldown WebAssembly fallback is present for Windows OneDrive / non-MSVC environments
+if not exist "node_modules\@rolldown\binding-wasm32-wasi" (
+    echo       Installing Rolldown WebAssembly fallback for Windows compatibility...
+    call npm install @rolldown/binding-wasm32-wasi --no-save --force --legacy-peer-deps >nul 2>nul
 )
 
 REM 6. Set environment variables and verify offline readiness

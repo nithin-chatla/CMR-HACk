@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
-import { createServer as createViteServer } from 'vite';
 
 const execFileAsync = promisify(execFile);
 
@@ -521,18 +520,32 @@ async function startServer() {
     }
   );
 
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(ROOT_DIR, 'dist');
+  const serveStaticFrontend = () => {
+    const uiDistPath = path.join(ROOT_DIR, 'ui_dist');
+    const distPath = fs.existsSync(uiDistPath) ? uiDistPath : path.join(ROOT_DIR, 'dist');
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+  };
+
+  if (process.env.NODE_ENV !== 'production' && process.env.SCANSURE_STATIC_UI !== '1') {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch (viteErr: any) {
+      console.warn(
+        '[ScanSure AI] Vite dev middleware unavailable (falling back to pre-built static UI):',
+        viteErr?.message || viteErr
+      );
+      serveStaticFrontend();
+    }
+  } else {
+    serveStaticFrontend();
   }
 
   app.listen(PORT, '0.0.0.0', () => {
