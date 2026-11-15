@@ -64,8 +64,8 @@ if exist "requirements.txt" (
 REM 5. Install Node.js dependencies on first run if node_modules is missing
 if not exist "node_modules" (
     echo.
-    echo [2/4] First-time setup: Installing Node.js packages ^(npm install^)...
-    call npm install
+    echo [2/4] First-time setup: Installing Node.js packages ^(npm install --legacy-peer-deps^)...
+    call npm install --legacy-peer-deps
     if !ERRORLEVEL! neq 0 (
         echo [ERROR] npm install failed. Please check your Node.js installation.
         pause
