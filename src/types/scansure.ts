@@ -99,7 +99,13 @@ export interface VideoMetadata {
 }
 
 export interface ProcessingSettings {
-  enhancement_method: 'speckle_bilateral_clahe' | 'median_clahe' | 'nlm_clahe' | 'clahe_only';
+  enhancement_method:
+    | 'auto_combined_hybrid'
+    | 'speckle_bilateral_clahe'
+    | 'aberdeen_fuzzy_adf_clahe'
+    | 'median_clahe'
+    | 'nlm_clahe'
+    | 'clahe_only';
   enhancement_strength: number;
   clahe_clip_limit: number;
   gamma: number;

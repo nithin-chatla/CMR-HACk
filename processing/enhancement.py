@@ -109,6 +109,14 @@ class UltrasoundEnhancer:
         elif self.method == "nlm_clahe":
             sat_in, sat2_in = compute_integral_images(gray, width, height)
             denoised = self._nlm_fast_despeckle(gray, sat_in, sat2_in, width, height)
+        elif self.method == "aberdeen_fuzzy_adf_clahe":
+            sat_in, sat2_in = compute_integral_images(gray, width, height)
+            denoised = self._aberdeen_fuzzy_adf_despeckle(gray, sat_in, sat2_in, width, height)
+        elif self.method == "auto_combined_hybrid":
+            sat_in, sat2_in = compute_integral_images(gray, width, height)
+            denoised = self._combined_three_stage_despeckle(
+                gray, sat_in, sat2_in, width, height
+            )
         elif self.method == "clahe_only":
             denoised = bytearray(gray)
         else:
@@ -132,6 +140,150 @@ class UltrasoundEnhancer:
 
         sat_out, sat2_out = compute_integral_images(out, width, height)
         return out, sat_out, sat2_out
+
+    def _combined_three_stage_despeckle(
+        self,
+        gray: bytearray,
+        sat: List[int],
+        sat2: List[int],
+        width: int,
+        height: int,
+    ) -> bytearray:
+        """
+        Single-pass fused 3-stage hybrid despeckler combining:
+        1. Adaptive Lee-Sigma MMSE + Spatial-Range Bilateral
+        2. Aberdeen LFIT Fuzzy + Perona-Malik Anisotropic Diffusion
+        3. Self-similar Neighborhood Non-Local Means (NLM) weighting
+        """
+        stride = width + 1
+        out = bytearray(width * height)
+        _, global_var = box_stats(
+            sat, sat2, stride, width // 4, height // 4, (3 * width) // 4, (3 * height) // 4
+        )
+        noise_var = max(45.0, min(360.0, global_var * 0.55 * (0.65 + 0.55 * self.strength)))
+        inv_kappa2 = 1.0 / noise_var
+        dt = 0.20 * (0.5 + 0.5 * self.strength)
+        rad = max(2, self.denoise_radius)
+
+        for y in range(height):
+            y0 = 0 if y < rad else y - rad
+            y1 = height if y + rad + 1 > height else y + rad + 1
+            dy = y1 - y0
+            y0_s = y0 * stride
+            y1_s = y1 * stride
+            row_off = y * width
+            r_up = (y - 1) * width if y > 0 else row_off
+            r_dn = (y + 1) * width if y + 1 < height else row_off
+
+            for x in range(width):
+                x0 = 0 if x < rad else x - rad
+                x1 = width if x + rad + 1 > width else x + rad + 1
+                inv_area = 1.0 / ((x1 - x0) * dy)
+
+                s1 = sat[y1_s + x1] - sat[y0_s + x1] - sat[y1_s + x0] + sat[y0_s + x0]
+                s2 = sat2[y1_s + x1] - sat2[y0_s + x1] - sat2[y1_s + x0] + sat2[y0_s + x0]
+                local_mean = s1 * inv_area
+                local_var = max(0.0, (s2 * inv_area) - (local_mean * local_mean))
+
+                c = float(gray[row_off + x])
+                x_l = x - 1 if x > 0 else x
+                x_r = x + 1 if x + 1 < width else x
+
+                # Stage 1: Lee-Sigma MMSE weight
+                k_lee = 0.0 if local_var <= noise_var else (local_var - noise_var) / (local_var + 1e-5)
+                val_lee = local_mean + k_lee * (c - local_mean)
+
+                # Stage 2: Perona-Malik Anisotropic Diffusion + Aberdeen LFIT
+                d_n = float(gray[r_up + x]) - c
+                d_s = float(gray[r_dn + x]) - c
+                d_w = float(gray[row_off + x_l]) - c
+                d_e = float(gray[row_off + x_r]) - c
+                c_n = 1.0 / (1.0 + (d_n * d_n) * inv_kappa2)
+                c_s = 1.0 / (1.0 + (d_s * d_s) * inv_kappa2)
+                c_w = 1.0 / (1.0 + (d_w * d_w) * inv_kappa2)
+                c_e = 1.0 / (1.0 + (d_e * d_e) * inv_kappa2)
+                adf_val = c + dt * (c_n * d_n + c_s * d_s + c_w * d_w + c_e * d_e)
+                edge_membership = local_var / (local_var + 1.8 * noise_var + 1e-5)
+                val_adf = local_mean + (0.08 + 0.92 * edge_membership) * (adf_val - local_mean)
+
+                # Stage 3: NLM self-similar neighborhood blend
+                w_sim = 1.0 / (1.0 + ((c - local_mean) * (c - local_mean)) * inv_kappa2)
+                val_nlm = (1.0 - 0.82 * w_sim) * c + (0.82 * w_sim) * local_mean
+
+                fused = int(0.45 * val_adf + 0.35 * val_lee + 0.20 * val_nlm + 0.5)
+                out[row_off + x] = 255 if fused > 255 else (0 if fused < 0 else fused)
+
+        return out
+
+    def _aberdeen_fuzzy_adf_despeckle(
+        self,
+        gray: bytearray,
+        sat: List[int],
+        sat2: List[int],
+        width: int,
+        height: int,
+    ) -> bytearray:
+        """
+        Implements the Automated Ultrasound Video Enhancement method inspired by
+        Jabbar, Day, Aladi & Chadwick (University of Aberdeen / Keele University, ICICT 2021):
+        Stage A: Perona-Malik Anisotropic Diffusion Filtering (ADF) with local adaptive speckle conductance.
+        Stage B: Local Fuzzy Inference Technique (LFIT) rule-based contrast & boundary enhancement.
+        """
+        stride = width + 1
+        out = bytearray(width * height)
+        _, global_var = box_stats(
+            sat, sat2, stride, width // 4, height // 4, (3 * width) // 4, (3 * height) // 4
+        )
+        kappa2 = max(45.0, min(380.0, global_var * 0.48 * (0.65 + 0.5 * self.strength)))
+        inv_kappa2 = 1.0 / kappa2
+        dt = 0.18 * (0.5 + 0.5 * self.strength)
+
+        for y in range(height):
+            y0 = 0 if y < 2 else y - 2
+            y1 = height if y + 3 > height else y + 3
+            dy = y1 - y0
+            y0_s = y0 * stride
+            y1_s = y1 * stride
+            row_off = y * width
+            r_up = (y - 1) * width if y > 0 else row_off
+            r_dn = (y + 1) * width if y + 1 < height else row_off
+
+            for x in range(width):
+                x0 = 0 if x < 2 else x - 2
+                x1 = width if x + 3 > width else x + 3
+                inv_area = 1.0 / ((x1 - x0) * dy)
+
+                s1 = sat[y1_s + x1] - sat[y0_s + x1] - sat[y1_s + x0] + sat[y0_s + x0]
+                s2 = sat2[y1_s + x1] - sat2[y0_s + x1] - sat2[y1_s + x0] + sat2[y0_s + x0]
+                local_mean = s1 * inv_area
+                local_var = max(0.0, (s2 * inv_area) - (local_mean * local_mean))
+
+                c = float(gray[row_off + x])
+                x_l = x - 1 if x > 0 else x
+                x_r = x + 1 if x + 1 < width else x
+
+                # 4-connected directional gradients for Perona-Malik Anisotropic Diffusion
+                d_n = float(gray[r_up + x]) - c
+                d_s = float(gray[r_dn + x]) - c
+                d_w = float(gray[row_off + x_l]) - c
+                d_e = float(gray[row_off + x_r]) - c
+
+                c_n = 1.0 / (1.0 + (d_n * d_n) * inv_kappa2)
+                c_s = 1.0 / (1.0 + (d_s * d_s) * inv_kappa2)
+                c_w = 1.0 / (1.0 + (d_w * d_w) * inv_kappa2)
+                c_e = 1.0 / (1.0 + (d_e * d_e) - (d_e * d_e) + (d_e * d_e) * inv_kappa2)
+
+                adf_val = c + dt * (c_n * d_n + c_s * d_s + c_w * d_w + c_e * d_e)
+
+                # Local Fuzzy Inference Technique (LFIT) membership for edge vs homogeneous tissue
+                edge_membership = local_var / (local_var + kappa2 + 1e-5)
+                diff_from_mean = adf_val - local_mean
+                # Fuzzy rule: suppress speckle in low-membership regions, stretch contrast on boundaries
+                fuzzy_gain = 0.18 + 1.15 * edge_membership
+                enhanced_val = int(local_mean + fuzzy_gain * diff_from_mean + 0.5)
+                out[row_off + x] = 255 if enhanced_val > 255 else (0 if enhanced_val < 0 else enhanced_val)
+
+        return out
 
     def _lee_bilateral_despeckle(
         self,

@@ -6,6 +6,9 @@ import {
   selectTopConfidenceKeyframes,
   validateProcessingSettings,
   formatTimestampMillis,
+  parseApiResponseJson,
+  recommendAutoEnhancementSettings,
+  ENHANCEMENT_METHOD_INFO,
 } from './ultrasoundAnalytics';
 import type { AnnotatedKeyframe, FrameTimelineEntry, ProcessingSettings } from '../types/scansure';
 
@@ -16,7 +19,10 @@ test('classifyConfidenceStatus enforces validated threshold and uncertain review
 
   const uncertain = classifyConfidenceStatus(0.64, 0.55, 0.72);
   assert.equal(uncertain.status, 'uncertain_review');
-  assert.equal(uncertain.displayLabel, 'Uncertain — Requires Radiologist Review');
+  assert.equal(
+    uncertain.displayLabel,
+    'Potential uncertain hypoechoic region — Requires radiologist review'
+  );
   assert.equal(uncertain.requiresRadiologistReview, true);
 
   const candidate = classifyConfidenceStatus(0.84, 0.55, 0.72);
@@ -37,7 +43,7 @@ test('filterTimelineByThreshold suppresses detections below threshold and recalc
           frame_number: 0,
           timestamp_sec: 0.0,
           track_id: 1,
-          category: 'Cystic / Anechoic Lesion Candidate',
+          category: 'Potential cystic / anechoic region',
           is_uncertain: false,
           bbox_xywh: [120, 100, 48, 36],
           centroid_xy: [144, 118],
@@ -55,7 +61,7 @@ test('filterTimelineByThreshold suppresses detections below threshold and recalc
           frame_number: 0,
           timestamp_sec: 0.0,
           track_id: 2,
-          category: 'Uncertain — Requires Radiologist Review',
+          category: 'Potential uncertain hypoechoic region',
           is_uncertain: true,
           bbox_xywh: [200, 130, 30, 26],
           centroid_xy: [215, 143],
@@ -120,9 +126,9 @@ test('selectTopConfidenceKeyframes ranks keyframes by highest confidence score a
   assert.equal(top2[1].frame_number, 12);
 });
 
-test('validateProcessingSettings catches out-of-range parameters', () => {
+test('validateProcessingSettings catches out-of-range parameters and supports aberdeen_fuzzy_adf_clahe', () => {
   const validConfig: ProcessingSettings = {
-    enhancement_method: 'speckle_bilateral_clahe',
+    enhancement_method: 'aberdeen_fuzzy_adf_clahe',
     enhancement_strength: 0.75,
     clahe_clip_limit: 2.2,
     gamma: 1.05,
@@ -135,6 +141,7 @@ test('validateProcessingSettings catches out-of-range parameters', () => {
     top_k_frames: 6,
   };
   assert.equal(validateProcessingSettings(validConfig).valid, true);
+  assert.ok(ENHANCEMENT_METHOD_INFO.aberdeen_fuzzy_adf_clahe.citation?.includes('Jabbar'));
 
   const invalidConfig: ProcessingSettings = {
     ...validConfig,
@@ -146,8 +153,28 @@ test('validateProcessingSettings catches out-of-range parameters', () => {
   assert.equal(check.errors.length, 2);
 });
 
+test('parseApiResponseJson catches HTML <!doctype responses without throwing SyntaxError', () => {
+  const htmlErr = parseApiResponseJson('<!doctype html><html><body>Not Found</body></html>', 404, 'text/html');
+  assert.equal(htmlErr.ok, false);
+  assert.ok(htmlErr.userMessage?.includes('Unable to load the selected study'));
+  assert.ok(htmlErr.technicalDetails?.includes('returned HTML content'));
+
+  const validJson = parseApiResponseJson('{"status":"completed","job_id":"demo_case01"}', 200, 'application/json');
+  assert.equal(validJson.ok, true);
+  assert.equal(validJson.data.job_id, 'demo_case01');
+});
+
 test('formatTimestampMillis formats frame timestamps accurately', () => {
   assert.equal(formatTimestampMillis(0), '00:00.00');
   assert.equal(formatTimestampMillis(2.4), '00:02.40');
   assert.equal(formatTimestampMillis(65.125), '01:05.13');
 });
+
+test('recommendAutoEnhancementSettings automatically selects auto_combined_hybrid and tunes parameters', () => {
+  const rec = recommendAutoEnhancementSettings(null, 8);
+  assert.equal(rec.enhancement_method, 'auto_combined_hybrid');
+  assert.equal(rec.top_k_frames, 8);
+  assert.equal(validateProcessingSettings(rec).valid, true);
+  assert.ok(ENHANCEMENT_METHOD_INFO.auto_combined_hybrid.fullName.includes('Combined 3-Stage Hybrid'));
+});
+

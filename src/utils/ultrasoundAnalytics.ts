@@ -3,7 +3,164 @@ import type {
   DetectionRecord,
   FrameTimelineEntry,
   ProcessingSettings,
+  VideoMetadata,
 } from '../types/scansure';
+
+export interface SafeApiResult<T> {
+  ok: boolean;
+  data?: T;
+  userMessage?: string;
+  technicalDetails?: string;
+}
+
+export const ENHANCEMENT_METHOD_INFO: Record<
+  ProcessingSettings['enhancement_method'],
+  {
+    shortLabel: string;
+    fullName: string;
+    description: string;
+    citation?: string;
+  }
+> = {
+  auto_combined_hybrid: {
+    shortLabel: 'Auto-Selected Combined Hybrid (Lee-Sigma + Aberdeen LFIT + NLM + CLAHE)',
+    fullName:
+      'Combined 3-Stage Hybrid Despeckling (Lee-Sigma Bilateral + Aberdeen LFIT Anisotropic Diffusion + Non-Local Means + Bilinear CLAHE)',
+    description:
+      'Automatically combines all three speckle denoising engines (Adaptive Lee-Sigma MMSE, Aberdeen LFIT Anisotropic Diffusion, and Multi-Offset Non-Local Means) with Bilinear CLAHE contrast recovery.',
+    citation:
+      'Jabbar et al. (2021) University of Aberdeen LFIT + Lee (1980) MMSE + Buades et al. (2005) NLM.',
+  },
+  speckle_bilateral_clahe: {
+    shortLabel: 'Lee-Sigma + Bilateral + CLAHE',
+    fullName: 'Adaptive Lee-Sigma MMSE + Spatial-Range Bilateral + Bilinear CLAHE',
+    description:
+      'Suppresses multiplicative Rayleigh speckle noise using local O(1) integral-image variance estimation while locking cyst boundaries.',
+  },
+  aberdeen_fuzzy_adf_clahe: {
+    shortLabel: 'Aberdeen LFIT Fuzzy + Anisotropic Diffusion + CLAHE',
+    fullName:
+      'Local Fuzzy Inference Technique (LFIT) + Perona-Malik Anisotropic Diffusion + CLAHE',
+    description:
+      'Implements gradient-guided anisotropic speckle diffusion paired with local fuzzy membership contrast enhancement to sharpen fascial and cystic margins without amplifying homogeneous tissue noise.',
+    citation:
+      'Jabbar, S. I., Day, C. R., Aladi, A. Q., & Chadwick, E. K. (2021). Automated Ultrasound Video Enhancement. University of Aberdeen / IEEE ICICT.',
+  },
+  nlm_clahe: {
+    shortLabel: 'Non-Local Means (NLM) + CLAHE',
+    fullName: 'Multi-Offset Patch Non-Local Means Despeckling + Bilinear CLAHE',
+    description:
+      'Weights self-similar 3×3 parenchymal neighborhoods across 6 spatial offsets for smooth tissue homogenization.',
+  },
+  median_clahe: {
+    shortLabel: '3×3 Impulse Median + CLAHE',
+    fullName: '3×3 Non-Linear Rank-Order Median Filter + Bilinear CLAHE',
+    description:
+      'Rejects high-amplitude impulse artifacts and acoustic reverberation spikes before local contrast recovery.',
+  },
+  clahe_only: {
+    shortLabel: 'Adaptive CLAHE Contrast Only',
+    fullName: '8×6 Contextual Tile Bilinear CLAHE (No Spatial Smoothing)',
+    description:
+      'Applies local contrast-limited histogram equalization without spatial speckle smoothing.',
+  },
+};
+
+export function recommendAutoEnhancementSettings(
+  meta?: VideoMetadata | null,
+  currentTopKFrames: number = 6
+): ProcessingSettings {
+  const pixelCount = meta ? meta.width * meta.height : 320 * 240;
+  const isLowRes = pixelCount <= 360 * 280;
+  const isHighFps = meta ? meta.fps >= 20 : false;
+
+  return {
+    enhancement_method: 'auto_combined_hybrid',
+    enhancement_strength: isLowRes ? 0.75 : 0.68,
+    clahe_clip_limit: isLowRes ? 2.3 : 2.1,
+    gamma: 1.04,
+    temporal_alpha: isHighFps ? 0.25 : 0.30,
+    ai_detection_enabled: true,
+    detection_threshold: 0.55,
+    temporal_smoothing: true,
+    output_resolution: 'original',
+    device: 'auto',
+    top_k_frames: currentTopKFrames,
+  };
+}
+
+export function parseApiResponseJson<T = any>(
+  rawText: string,
+  httpStatus: number,
+  contentType: string | null = 'application/json'
+): SafeApiResult<T> {
+  const trimmed = (rawText || '').trim();
+  const isHtmlPayload =
+    trimmed.toLowerCase().startsWith('<!doctype') ||
+    trimmed.toLowerCase().startsWith('<html') ||
+    (contentType !== null && contentType.toLowerCase().includes('text/html'));
+
+  if (isHtmlPayload) {
+    return {
+      ok: false,
+      userMessage:
+        'Unable to load the selected study or reach the local processing service. Please verify the file and try again.',
+      technicalDetails: `HTTP ${httpStatus} returned HTML content (${contentType || 'text/html'}) instead of JSON: ${trimmed.slice(0, 140)}`,
+    };
+  }
+
+  if (!trimmed) {
+    return {
+      ok: false,
+      userMessage:
+        'The local processing service returned an empty response. Please verify the study file and try again.',
+      technicalDetails: `HTTP ${httpStatus} empty response body.`,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (httpStatus < 200 || httpStatus >= 300 || (parsed && parsed.error)) {
+      return {
+        ok: false,
+        userMessage:
+          parsed?.error ||
+          'Unable to complete the requested operation. Please verify the ultrasound file and settings.',
+        technicalDetails: `HTTP ${httpStatus}: ${JSON.stringify(parsed)}`,
+      };
+    }
+    return {
+      ok: true,
+      data: parsed as T,
+    };
+  } catch (err: any) {
+    return {
+      ok: false,
+      userMessage:
+        'Received an unreadable response from the local imaging engine. Please retry the operation.',
+      technicalDetails: `JSON parse failure on HTTP ${httpStatus}: ${err?.message || 'SyntaxError'} | Payload prefix: ${trimmed.slice(0, 120)}`,
+    };
+  }
+}
+
+export async function safeFetchJson<T = any>(
+  url: string,
+  options?: RequestInit
+): Promise<SafeApiResult<T>> {
+  try {
+    const res = await fetch(url, options);
+    const rawText = await res.text();
+    const contentType = res.headers.get('content-type');
+    return parseApiResponseJson<T>(rawText, res.status, contentType);
+  } catch (err: any) {
+    return {
+      ok: false,
+      userMessage:
+        'Unable to connect to the local ScanSure AI workstation backend. Ensure the local server is running.',
+      technicalDetails: `Network/Fetch exception for ${url}: ${err?.message || String(err)}`,
+    };
+  }
+}
 
 export function classifyConfidenceStatus(
   rawScore: number,
@@ -24,13 +181,13 @@ export function classifyConfidenceStatus(
   if (rawScore < uncertainUpperBound) {
     return {
       status: 'uncertain_review',
-      displayLabel: 'Uncertain — Requires Radiologist Review',
+      displayLabel: 'Potential uncertain hypoechoic region — Requires radiologist review',
       requiresRadiologistReview: true,
     };
   }
   return {
     status: 'candidate_detected',
-    displayLabel: 'Cystic / Anechoic Candidate — Requires Radiologist Review',
+    displayLabel: 'Potential cystic / anechoic region — Requires radiologist review',
     requiresRadiologistReview: true,
   };
 }
@@ -67,8 +224,8 @@ export function filterTimelineByThreshold(
           is_uncertain: isUncertain,
           validated_threshold: activeThreshold,
           category: isUncertain
-            ? 'Uncertain — Requires Radiologist Review'
-            : 'Cystic / Anechoic Lesion Candidate',
+            ? 'Potential uncertain hypoechoic region'
+            : 'Potential cystic / anechoic region',
         };
       });
 

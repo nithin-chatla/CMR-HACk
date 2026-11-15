@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Cpu, HardDrive, Layers } from 'lucide-react';
 import type { HardwareProfile } from '../types/scansure';
+import { safeFetchJson } from '../utils/ultrasoundAnalytics';
 
 interface HardwareAndArchitectureViewProps {
   hardware: HardwareProfile | null;
@@ -15,13 +16,10 @@ export const HardwareAndArchitectureView: React.FC<HardwareAndArchitectureViewPr
   const handleRunOfflineAudit = async () => {
     setIsAuditing(true);
     try {
-      const res = await fetch('/api/offline-verify');
-      const data = await res.json();
-      if (res.ok) {
-        setOfflineAudit(data);
+      const res = await safeFetchJson('/api/offline-verify');
+      if (res.ok && res.data) {
+        setOfflineAudit(res.data);
       }
-    } catch {
-      // ignore
     } finally {
       setIsAuditing(false);
     }
@@ -46,67 +44,66 @@ export const HardwareAndArchitectureView: React.FC<HardwareAndArchitectureViewPr
   const stages = [
     {
       num: '01',
-      name: 'VIDEO VALIDATION',
+      name: 'Video Validation',
       module: 'processing/video_reader.py',
       desc: 'Probes container format (MP4, AVI, MOV, MKV), dimensions, rational FPS, exact frame count, and audio stream presence via ffprobe.',
     },
     {
       num: '02',
-      name: 'FRAME EXTRACTION',
+      name: 'Frame Extraction',
       module: 'processing/frame_extractor.py',
       desc: 'Memory-bounded sequential rawvideo streaming via FFmpeg pipes so multi-hundred-MB cine loops never overload laptop RAM.',
     },
     {
       num: '03',
-      name: 'IMAGE QUALITY ASSESSMENT',
+      name: 'Image Quality Assessment',
       module: 'processing/enhancement.py',
       desc: 'Computes per-frame Equivalent Number of Looks (ENL) local 7x7 speckle index, parenchymal variance, and Sobel edge sharpness.',
     },
     {
       num: '04',
-      name: 'ULTRASOUND IMAGE ENHANCEMENT',
+      name: 'Ultrasound Enhancement',
       module: 'processing/enhancement.py',
-      desc: 'O(1) 2D integral-image Lee-Sigma & Bilateral edge-preserving despeckling + 8x6 contextual tile Bilinear CLAHE + Gamma LUT.',
+      desc: 'Supports Lee-Sigma + Bilateral + CLAHE and Aberdeen LFIT Fuzzy + Anisotropic Diffusion + CLAHE (Jabbar & Chadwick 2021).',
     },
     {
       num: '05',
-      name: 'AI ANOMALY DETECTION',
+      name: 'AI Anomaly Detection',
       module: 'models/segmentation/unet_ultrasound.py',
       desc: 'Multi-scale encoder-decoder receptive field pyramid evaluating core attenuation drop, homogeneity, and posterior acoustic enhancement.',
     },
     {
       num: '06',
-      name: 'SEGMENTATION / REGION HIGHLIGHTING',
+      name: 'Region Segmentation',
       module: 'processing/segmentation.py',
-      desc: 'Connected-component flood-fill contour extraction, solidity filtering, translucent mask overlay, and 5x7 clinical HUD rendering.',
+      desc: 'Connected-component flood-fill contour extraction, solidity filtering, translucent mask overlay, and 1–4 cm depth calibration ruler.',
     },
     {
       num: '07',
-      name: 'CONFIDENCE & TEMPORAL VALIDATION',
+      name: 'Temporal Validation',
       module: 'processing/temporal_processing.py',
       desc: 'Motion-gated temporal EMA despeckling + IoU bounding box tracking + threshold gating and Uncertain review classification.',
     },
     {
       num: '08',
-      name: 'VIDEO RECONSTRUCTION & EXPORT',
+      name: 'Video Reconstruction & Export',
       module: 'processing/video_writer.py',
-      desc: 'Simultaneous encoding of enhanced_video.mp4, annotated_video.mp4, comparison_video.mp4, JSON/CSV reports, and PNG keyframes.',
+      desc: 'Simultaneous encoding of enhanced_video.mp4, annotated_video.mp4, comparison_video.mp4, PDF/JSON/CSV reports, and PNG keyframes.',
     },
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Section 1: Calibrated Target Laptop Profile (jio-fiber) */}
+    <div className="flex flex-col gap-5">
       <section
         aria-label="Target Workstation Hardware Profile"
-        className="bg-[#0B0E17] border border-slate-800 rounded-lg p-5 flex flex-col gap-4"
+        className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-4 shadow-xs"
       >
-        <div className="pb-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
+        <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">
-              01. Calibrated Workstation Profile — {target.device_name} (Production Ready)
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Calibrated Workstation Profile — {target.device_name}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Configured for {target.processor} + {target.discrete_gpu} with automatic CPU/CUDA fallback.
             </p>
           </div>
@@ -114,176 +111,99 @@ export const HardwareAndArchitectureView: React.FC<HardwareAndArchitectureViewPr
             type="button"
             onClick={handleRunOfflineAudit}
             disabled={isAuditing}
-            className="px-3.5 py-1.5 text-xs font-semibold bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            className="px-3.5 py-1.5 text-xs font-semibold bg-[#0F172A] hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-400 text-white dark:text-slate-950 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4" />
-            {isAuditing ? 'Running Air-Gap Socket Verification...' : 'Verify Air-Gapped Offline Execution'}
+            <span>
+              {isAuditing
+                ? 'Running Air-Gap Socket Verification...'
+                : 'Verify Offline Execution'}
+            </span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-          <div className="p-3.5 bg-[#07090E] border border-slate-800 rounded flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-slate-400 font-mono text-[11px] uppercase">
-              <span>Host & Processor</span>
-              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 font-mono text-[11px] uppercase">
+              <span>Host &amp; Processor</span>
+              <Cpu className="w-3.5 h-3.5 text-teal-700 dark:text-sky-400" />
             </div>
-            <span className="text-sm font-semibold text-slate-100">
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {target.processor}
             </span>
-            <span className="font-mono text-slate-300">
+            <span className="font-mono text-slate-600 dark:text-slate-300">
               Device Name: {target.device_name}
             </span>
-            <span className="font-mono text-slate-400 text-[11px]">
-              {target.system_type}
-            </span>
           </div>
 
-          <div className="p-3.5 bg-[#07090E] border border-slate-800 rounded flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-slate-400 font-mono text-[11px] uppercase">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 font-mono text-[11px] uppercase">
               <span>Dual GPU Architecture</span>
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <Layers className="w-3.5 h-3.5 text-teal-700 dark:text-sky-400" />
             </div>
-            <span className="text-sm font-semibold text-cyan-400">
+            <span className="text-sm font-semibold text-teal-800 dark:text-sky-300">
               {target.discrete_gpu}
             </span>
-            <span className="font-mono text-slate-300">
+            <span className="font-mono text-slate-600 dark:text-slate-300">
               iGPU: {target.integrated_gpu}
             </span>
-            <span className="font-mono text-emerald-400 text-[11px]">
-              ● VRAM Budget Cap: 2.5 GB / 6.0 GB (Safe Margin)
-            </span>
           </div>
 
-          <div className="p-3.5 bg-[#07090E] border border-slate-800 rounded flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-slate-400 font-mono text-[11px] uppercase">
-              <span>RAM & Storage Allocation</span>
-              <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 font-mono text-[11px] uppercase">
+              <span>RAM &amp; Storage</span>
+              <HardDrive className="w-3.5 h-3.5 text-teal-700 dark:text-sky-400" />
             </div>
-            <span className="text-sm font-semibold text-slate-100 font-mono tabular-nums">
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
               RAM: {target.installed_ram_gb.toFixed(1)} GB ({target.usable_ram_gb} GB Usable)
             </span>
-            <span className="font-mono text-slate-300 tabular-nums">
-              Storage: {target.storage_used_gb} GB / {target.storage_total_gb} GB Used ({target.storage_free_gb} GB Free)
-            </span>
-            <span className="font-mono text-slate-400 text-[11px]">
-              Streaming Ring Buffer: Max 16 Frames in RAM
+            <span className="font-mono text-slate-600 dark:text-slate-300 tabular-nums">
+              Storage: {target.storage_free_gb} GB Free / {target.storage_total_gb} GB
             </span>
           </div>
 
-          <div className="p-3.5 bg-[#07090E] border border-slate-800 rounded flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-slate-400 font-mono text-[11px] uppercase">
-              <span>System Identifiers & I/O</span>
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 font-mono text-[11px] uppercase">
+              <span>Offline Status</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
             </div>
-            <span className="font-mono text-slate-200 text-[11px] break-all">
-              Device ID: {target.device_id}
+            <span className="font-mono text-slate-800 dark:text-slate-200 text-xs">
+              100% Local Execution
             </span>
-            <span className="font-mono text-slate-300 text-[11px]">
-              Product ID: {target.product_id}
-            </span>
-            <span className="font-mono text-slate-400 text-[11px]">
-              Display: {target.pen_and_touch}
+            <span className="font-mono text-slate-500 dark:text-slate-400 text-[11px]">
+              Zero External Cloud Calls
             </span>
           </div>
         </div>
 
-        {/* Live Offline Verification Result Banner */}
         {offlineAudit && (
-          <div className="p-3.5 bg-emerald-950/20 border border-emerald-500/40 rounded text-xs flex flex-wrap items-center justify-between gap-4">
+          <div className="p-3.5 bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 rounded-lg text-xs flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <span className="font-semibold text-emerald-300 font-mono">
+              <span className="font-semibold text-teal-900 dark:text-teal-200 font-mono">
                 ● AIR-GAPPED OFFLINE VERIFICATION PASSED (OUTBOUND SOCKETS BLOCKED)
               </span>
-              <span className="text-slate-300">
+              <span className="text-teal-800 dark:text-teal-300">
                 Verified Model: {offlineAudit.model_loaded_from_local_disk} · Frame Count Match:{' '}
-                {String(offlineAudit.frame_count_preserved)} · FPS Match:{' '}
-                {String(offlineAudit.fps_preserved)} · Zero Network Calls:{' '}
+                {String(offlineAudit.frame_count_preserved)} · Zero Network Calls:{' '}
                 {String(offlineAudit.zero_external_network_calls)}
               </span>
             </div>
-            <span className="font-mono text-emerald-400">
+            <span className="font-mono font-semibold text-teal-800 dark:text-teal-300">
               5/5 Required Artifacts Verified
             </span>
           </div>
         )}
       </section>
 
-      {/* Section 2: Performance Tuning for i5-13420H + RTX 3050 6GB */}
-      <section
-        aria-label="Hardware Execution Strategy"
-        className="bg-[#0B0E17] border border-slate-800 rounded-lg p-5 flex flex-col gap-4"
-      >
-        <div className="pb-3 border-b border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-100">
-            02. Execution Strategy for Intel Core i5-13420H + RTX 3050 6GB Laptop GPU
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Automatically adapts between NVIDIA CUDA Ampere acceleration and Intel AVX2 multi-core CPU execution without crashing if CUDA is absent.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono">
-                <th className="py-2.5 px-3">Pipeline Subsystem</th>
-                <th className="py-2.5 px-3">RTX 3050 6GB Mode (CUDA Active)</th>
-                <th className="py-2.5 px-3">i5-13420H CPU Mode (Fallback / Portable)</th>
-                <th className="py-2.5 px-3 text-right">Memory Cap</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70 font-mono">
-              <tr>
-                <td className="py-2.5 px-3 font-sans font-medium text-slate-200">
-                  Video Decoding & Reconstruction
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  FFmpeg Streaming Pipe (libx264 / NVENC optional)
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  FFmpeg Multi-Threaded libx264 (4 P-Cores + 4 E-Cores)
-                </td>
-                <td className="py-2.5 px-3 text-right text-cyan-400">&lt; 180 MB RAM</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-sans font-medium text-slate-200">
-                  Speckle Denoising & Bilinear CLAHE
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  O(1) 2D Integral SAT + Precomputed LUT Interpolation
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  O(1) 2D Integral SAT + Precomputed LUT Interpolation
-                </td>
-                <td className="py-2.5 px-3 text-right text-cyan-400">&lt; 64 MB RAM</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-sans font-medium text-slate-200">
-                  ScanSure-UNet-Lite Segmentation
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  Batch Size 16 · FP16/FP32 Tensor / Integral Pyramid
-                </td>
-                <td className="py-2.5 px-3 text-slate-300">
-                  Batch Size 8 · Stride-3 Multi-Scale Integral Pyramid
-                </td>
-                <td className="py-2.5 px-3 text-right text-cyan-400">&lt; 1.2 GB VRAM / RAM</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Section 3: 8-Stage Modular Architecture */}
       <section
         aria-label="Modular Video Processing Architecture"
-        className="bg-[#0B0E17] border border-slate-800 rounded-lg p-5 flex flex-col gap-4"
+        className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-4 shadow-xs"
       >
-        <div className="pb-3 border-b border-slate-800">
-          <h2 className="text-sm font-semibold text-slate-100">
-            03. Modular 8-Stage Ultrasound Video Processing Pipeline
+        <div className="pb-3 border-b border-slate-200 dark:border-slate-800">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Modular 8-Stage Ultrasound Video Processing Pipeline
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Each stage is implemented as an independent, unit-tested Python module under /processing, /models, /evaluation, and /reports.
           </p>
         </div>
@@ -292,17 +212,23 @@ export const HardwareAndArchitectureView: React.FC<HardwareAndArchitectureViewPr
           {stages.map((st) => (
             <div
               key={st.num}
-              className="p-3.5 bg-[#07090E] border border-slate-800 rounded flex flex-col justify-between gap-2"
+              className="p-3.5 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col justify-between gap-2"
             >
               <div>
                 <div className="flex items-center justify-between text-xs font-mono mb-1">
-                  <span className="text-cyan-400 font-semibold">STAGE {st.num}</span>
-                  <span className="text-slate-400 text-[11px]">{st.module}</span>
+                  <span className="text-teal-700 dark:text-sky-400 font-semibold">
+                    Stage {st.num}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                    {st.module}
+                  </span>
                 </div>
-                <h3 className="text-xs font-semibold text-slate-100 mb-1.5">
+                <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-1">
                   {st.name}
                 </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">{st.desc}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {st.desc}
+                </p>
               </div>
             </div>
           ))}

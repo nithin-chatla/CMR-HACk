@@ -41,14 +41,40 @@ interface ActiveJobInfo {
 
 const activeJobs = new Map<string, ActiveJobInfo>();
 
+function resolvePythonExecutable(): string {
+  if (process.env.PYTHON_BIN && process.env.PYTHON_BIN.trim()) {
+    return process.env.PYTHON_BIN.trim();
+  }
+  const winVenvPython = path.join(ROOT_DIR, '.venv', 'Scripts', 'python.exe');
+  if (process.platform === 'win32' && fs.existsSync(winVenvPython)) {
+    return winVenvPython;
+  }
+  const unixVenvPython = path.join(ROOT_DIR, '.venv', 'bin', 'python');
+  if (process.platform !== 'win32' && fs.existsSync(unixVenvPython)) {
+    return unixVenvPython;
+  }
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+const PYTHON_CMD = resolvePythonExecutable();
+
 async function runPythonJsonCommand(args: string[], timeoutMs = 120000): Promise<any> {
-  const { stdout } = await execFileAsync('python3', ['app.py', ...args], {
+  const { stdout } = await execFileAsync(PYTHON_CMD, ['app.py', ...args], {
     cwd: ROOT_DIR,
     env: { ...process.env, PYTHONPATH: ROOT_DIR },
     maxBuffer: 32 * 1024 * 1024,
     timeout: timeoutMs,
   });
-  return JSON.parse(stdout);
+  const trimmed = stdout.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const firstBrace = trimmed.search(/[{[]/);
+    if (firstBrace >= 0) {
+      return JSON.parse(trimmed.slice(firstBrace));
+    }
+    throw new Error('Invalid JSON output from local Python processing engine.');
+  }
 }
 
 async function ensureBootstrapped(): Promise<void> {
@@ -264,13 +290,21 @@ async function startServer() {
         String(Math.max(1, Math.min(12, Number(top_k_frames) || 12))),
       ];
 
-      const child = spawn('python3', args, {
+      const child = spawn(PYTHON_CMD, args, {
         cwd: ROOT_DIR,
         env: { ...process.env, PYTHONPATH: ROOT_DIR },
       });
 
       let stdoutChunks = '';
       let stderrChunks = '';
+
+      child.on('error', (spawnErr) => {
+        activeJobs.set(jobId, {
+          jobId,
+          status: 'failed',
+          error: `Unable to start Python engine (${PYTHON_CMD}): ${spawnErr.message}`,
+        });
+      });
 
       child.stdout.on('data', (chunk) => {
         stdoutChunks += chunk.toString();
@@ -459,6 +493,33 @@ async function startServer() {
     }
     res.sendFile(targetPath);
   });
+
+  // Explicit JSON 404 for any unmatched /api/* route so Vite SPA HTML fallback never triggers
+  app.use('/api', (req, res) => {
+    res.status(404).json({
+      error: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+      code: 'API_NOT_FOUND',
+    });
+  });
+
+  // Global JSON error handler (catches multer file-size errors, malformed JSON bodies, etc.)
+  app.use(
+    (
+      err: any,
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      if (req.path.startsWith('/api') || req.originalUrl.startsWith('/api')) {
+        res.status(err.status || 400).json({
+          error: err.message || 'Local server API error occurred',
+          code: err.code || 'API_ERROR',
+        });
+        return;
+      }
+      next(err);
+    }
+  );
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

@@ -256,8 +256,15 @@ $$w_{\text{range}}(\Delta I) = \exp\left(-\frac{|\Delta I|^2}{2 \sigma_r^2}\righ
 
 This sharpens the transition between dark anechoic cyst lumens and bright surrounding fibroglandular stroma.
 
-### 6.4 Non-Local Means (NLM) & $3 \times 3$ Impulse Median Filters
- ScanSure AI also provides configurable **Non-Local Means (NLM)** patch-similarity denoising (comparing local $3 \times 3$ neighborhood means across a search window weighted by $\exp(-\Delta \mu^2 / h^2)$) and **$3 \times 3$ Impulse Median** filtering for salt-and-pepper transducer drop-out artifacts.
+### 6.4 Non-Local Means (NLM), $3 \times 3$ Impulse Median & Aberdeen LFIT Fuzzy + Anisotropic Diffusion (`aberdeen_fuzzy_adf_clahe`)
+ScanSure AI provides five selectable spatial enhancement operators:
+1. **Lee-Sigma + Bilateral + CLAHE (`speckle_bilateral_clahe`):** Default $O(1)$ integral-image variance estimator paired with bilateral range weighting.
+2. **Aberdeen LFIT Fuzzy + Perona-Malik Anisotropic Diffusion + CLAHE (`aberdeen_fuzzy_adf_clahe`):** Inspired by **S. I. Jabbar, C. R. Day, A. Q. Aladi, and E. K. Chadwick** (*"Automated Ultrasound Video Enhancement"*, University of Aberdeen / IEEE ICICT 2021, DOI: `10.1109/ICICT52195.2021.9568471`). Combines:
+   - **Stage A — Perona-Malik Anisotropic Diffusion Filtering (ADF):** Computes 4-connected directional gradients $(\nabla_N, \nabla_S, \nabla_E, \nabla_W)$ with adaptive speckle conductance $c(\|\nabla I\|) = \left(1 + (\|\nabla I\| / \kappa)^2\right)^{-1}$ so homogeneous speckle diffuses while sharp acoustic interfaces are locked.
+   - **Stage B — Local Fuzzy Inference Technique (LFIT):** Evaluates local variance membership $\mu_{\text{edge}}(x,y) = \sigma_\Omega^2 / (\sigma_\Omega^2 + \kappa^2)$ to apply rule-based local contrast stretching across cyst margins and fascial planes without amplifying background noise.
+3. **Non-Local Means (`nlm_clahe`):** Patch-similarity denoising comparing local $3 \times 3$ neighborhood means across 6 spatial offsets weighted by $\exp(-\Delta \mu^2 / h^2)$.
+4. **$3 \times 3$ Impulse Median (`median_clahe`):** Non-linear rank-order median filter for salt-and-pepper transducer drop-out artifacts.
+5. **Adaptive CLAHE Only (`clahe_only`):** Pure local contrast recovery without spatial smoothing.
 
 ### 6.5 $8 \times 6$ Contextual Tile Bilinear CLAHE & Gamma LUT
 Standard global histogram equalization over-amplifies background noise in ultrasound. ScanSure AI implements **Contrast Limited Adaptive Histogram Equalization (CLAHE)** over an $8 \times 6$ grid of contextual tiles:

@@ -1,0 +1,1 @@
+{"job_id": "job_1794592386933", "status": "processing", "stage": "05. U-Net Anomaly Segmentation & Tracking", "progress_pct": 58.0, "frames_processed": 40, "total_frames": 65, "elapsed_sec": 133.33, "eta_sec": 83.33}

@@ -5,16 +5,16 @@ import {
   RotateCcw,
   Download,
   CheckCircle2,
-  Maximize2,
-  SlidersHorizontal,
+  ZoomIn,
+  Columns,
+  Film,
   Sparkles,
+  Image as ImageIcon,
   FileDown,
-  FileText,
-  SplitSquareHorizontal,
-  Activity,
-  Layers,
+  MoveHorizontal,
 } from 'lucide-react';
 import type { JobResultPayload } from '../types/scansure';
+import type { ZoomableMediaItem } from './MediaZoomModal';
 import {
   filterTimelineByThreshold,
   formatTimestampMillis,
@@ -32,9 +32,15 @@ interface QuadVideoComparisonStageProps {
   onOpenFullKeyframes: () => void;
   onExportClientPdf: () => void;
   isGeneratingPdf?: boolean;
+  onOpenZoomModal?: (item: ZoomableMediaItem) => void;
 }
 
-type StageViewMode = 'quad' | 'split_wipe' | 'annotated' | 'enhanced' | 'comparison';
+export type ResultsDedicatedTab =
+  | 'enhance_wiper'
+  | 'side_by_side'
+  | 'side_by_side_video'
+  | 'video_comparison'
+  | 'top_frames';
 
 export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> = ({
   jobResult,
@@ -44,23 +50,29 @@ export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> =
   onChangeTopFramesCount,
   onSelectFrame,
   onOpenDoctorReport,
-  onOpenFullKeyframes,
   onExportClientPdf,
   isGeneratingPdf = false,
+  onOpenZoomModal,
 }) => {
+  const wiperContainerRef = useRef<HTMLDivElement | null>(null);
+  const originalRef = useRef<HTMLVideoElement | null>(null);
   const enhancedRef = useRef<HTMLVideoElement | null>(null);
   const annotatedRef = useRef<HTMLVideoElement | null>(null);
   const comparisonRef = useRef<HTMLVideoElement | null>(null);
   const origWipeRef = useRef<HTMLVideoElement | null>(null);
   const rightWipeRef = useRef<HTMLVideoElement | null>(null);
 
+  const [activeSubPage, setActiveSubPage] = useState<ResultsDedicatedTab>('enhance_wiper');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(jobResult.input_video.duration_sec || 3.0);
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
-  const [viewMode, setViewMode] = useState<StageViewMode>('quad');
+
+  // Remini-style interactive canvas wiper state (drag directly on canvas)
   const [wipePercent, setWipePercent] = useState<number>(50);
+  const [isDraggingWiper, setIsDraggingWiper] = useState<boolean>(false);
   const [showAiOverlayOnWipe, setShowAiOverlayOnWipe] = useState<boolean>(true);
+  const [selectedSideBySideIdx, setSelectedSideBySideIdx] = useState<number>(0);
 
   const fps = jobResult.input_video.fps || 15;
   const totalFrames = jobResult.input_video.frame_count || 45;
@@ -86,6 +98,7 @@ export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> =
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(jobResult.input_video.duration_sec || 3.0);
+    setSelectedSideBySideIdx(0);
   }, [jobResult.job_id, jobResult.input_video.duration_sec]);
 
   useEffect(() => {
@@ -97,6 +110,7 @@ export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> =
 
   const getAllVideos = (): HTMLVideoElement[] =>
     [
+      originalRef.current,
       enhancedRef.current,
       annotatedRef.current,
       comparisonRef.current,
@@ -150,6 +164,35 @@ export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> =
     });
   };
 
+  // Remini-style pointer slide calculation directly on the image/video container
+  const updateWipeFromClientX = (clientX: number) => {
+    const el = wiperContainerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const pct = Math.max(2, Math.min(98, Math.round((relX / rect.width) * 100)));
+    setWipePercent(pct);
+  };
+
+  const handleWiperPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setIsDraggingWiper(true);
+    updateWipeFromClientX(e.clientX);
+  };
+
+  const handleWiperPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingWiper) return;
+    updateWipeFromClientX(e.clientX);
+  };
+
+  const handleWiperPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingWiper) {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+      setIsDraggingWiper(false);
+    }
+  };
+
   const currentFrameEntry =
     filteredTimeline[currentFrameNumber] || filteredTimeline[0];
   const enh = jobResult.enhancement_evaluation;
@@ -158,698 +201,782 @@ export const QuadVideoComparisonStage: React.FC<QuadVideoComparisonStageProps> =
   const origVideoUrl =
     jobResult.input_video.video_url ||
     `/api/samples/video/${encodeURIComponent(jobResult.input_video.filename)}`;
-  const wipeRightUrl = showAiOverlayOnWipe
-    ? `${jobResult.exports.videos.annotated_video.url}?t=${jobResult.job_id}`
-    : `${jobResult.exports.videos.enhanced_video.url}?t=${jobResult.job_id}`;
+  const enhancedVideoUrl = `${jobResult.exports.videos.enhanced_video.url}?t=${jobResult.job_id}`;
+  const annotatedVideoUrl = `${jobResult.exports.videos.annotated_video.url}?t=${jobResult.job_id}`;
+  const comparisonVideoUrl = `${jobResult.exports.videos.comparison_video.url}?t=${jobResult.job_id}`;
+
+  const wipeRightUrl = showAiOverlayOnWipe ? annotatedVideoUrl : enhancedVideoUrl;
+
+  const dedicatedPages: {
+    id: ResultsDedicatedTab;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      id: 'enhance_wiper',
+      label: 'Enhance Wiper',
+      icon: <MoveHorizontal className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'side_by_side',
+      label: 'Side-by-Side Comparison',
+      icon: <Columns className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'side_by_side_video',
+      label: 'Side-by-Side Video Comparison',
+      icon: <Film className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'video_comparison',
+      label: 'Video Comparison',
+      icon: <Sparkles className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'top_frames',
+      label: `Top Clear Frames (${topKeyframes.length})`,
+      icon: <ImageIcon className="w-3.5 h-3.5" />,
+    },
+  ];
+
+  const activeSideBySideFrame =
+    topKeyframes[selectedSideBySideIdx] || topKeyframes[0] || null;
 
   return (
-    <div className="flex flex-col gap-3.5">
-      {/* Top 5 Clinical KPI Cards + Direct Radiologist Report Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
-        <div className="bg-[#0E1524] border border-slate-800/90 rounded-xl p-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Triage Decision</span>
-            <Activity className="w-3.5 h-3.5 text-cyan-400" />
-          </div>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span
-              className={`text-xs font-bold font-mono tracking-tight ${
-                activeFindingFrames > 0 ? 'text-amber-300' : 'text-emerald-300'
-              }`}
-            >
-              {activeFindingFrames > 0
-                ? '▲ RADIOLOGIST REVIEW REQ.'
-                : '● NORMAL PARENCHYMA'}
-            </span>
-          </div>
-          <div className="mt-1 text-[11px] font-mono text-slate-400 truncate">
-            {candidateCount} Cystic · {uncertainCount} Uncertain
-          </div>
+    <div className="flex flex-col gap-5">
+      {/* DEDICATED RESULT PAGES NAVIGATION BAR */}
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div
+          role="tablist"
+          aria-label="Dedicated result pages"
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          {dedicatedPages.map((tab) => {
+            const isActive = activeSubPage === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                data-testid={`results-page-${tab.id}`}
+                onClick={() => {
+                  setIsPlaying(false);
+                  setActiveSubPage(tab.id);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#0F172A] text-white dark:bg-sky-500 dark:text-slate-950 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="bg-[#0E1524] border border-slate-800/90 rounded-xl p-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Peak Raw Confidence</span>
-            <span className="font-mono text-[10px] text-cyan-400">
-              THR &ge; {Math.round(activeThreshold * 100)}%
-            </span>
-          </div>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-xl font-bold font-mono tabular-nums text-slate-100">
-              {(sum.peak_raw_confidence * 100).toFixed(1)}%
-            </span>
-            <span className="text-[11px] font-mono text-slate-400">
-              (Frame #{sum.peak_confidence_frame})
-            </span>
-          </div>
-          <div className="mt-1 text-[11px] font-mono text-slate-400">
-            {activeFindingFrames} / {totalFrames} frames highlighted
-          </div>
-        </div>
-
-        <div className="bg-[#0E1524] border border-slate-800/90 rounded-xl p-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Speckle Suppression (ENL)</span>
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          </div>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-xl font-bold font-mono tabular-nums text-emerald-300">
-              +{enh.speckle_suppression_gain_pct}%
-            </span>
-            <span className="text-[11px] font-mono text-slate-400">
-              ({enh.input_enl_speckle_index} &rarr; {enh.enhanced_enl_speckle_index})
-            </span>
-          </div>
-          <div className="mt-1 text-[11px] font-mono text-slate-400">
-            PSNR {enh.mean_psnr_db} dB · SSIM {enh.mean_ssim}
-          </div>
-        </div>
-
-        <div className="bg-[#0E1524] border border-slate-800/90 rounded-xl p-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Edge Preservation (EPI)</span>
-            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-          </div>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-xl font-bold font-mono tabular-nums text-cyan-300">
-              {enh.edge_preservation_index}
-            </span>
-            <span className="text-[11px] font-mono text-emerald-400">BOUNDARY LOCKED</span>
-          </div>
-          <div className="mt-1 text-[11px] font-mono text-slate-400">
-            {jobResult.input_video.resolution} · {fps} FPS
-          </div>
-        </div>
-
-        {/* Direct Doctor Report Quick Card */}
-        <div className="col-span-2 lg:col-span-1 bg-gradient-to-br from-cyan-950/60 via-[#0E1524] to-[#0E1524] border border-cyan-500/40 rounded-xl p-3 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-cyan-300 uppercase tracking-wider">
-              Doctor Reports (PDF &amp; JSON)
-            </span>
-            <FileText className="w-3.5 h-3.5 text-cyan-300" />
-          </div>
-          <div className="my-1.5 flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onExportClientPdf}
-              disabled={isGeneratingPdf}
-              data-testid="stage-download-pdf-btn"
-              className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold text-xs transition-all cursor-pointer whitespace-nowrap"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              <span>{isGeneratingPdf ? 'PDF...' : 'Save PDF'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenDoctorReport}
-              data-testid="stage-open-report-reader-btn"
-              className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-200 border border-slate-700 font-semibold text-xs transition-all cursor-pointer whitespace-nowrap"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Read Report</span>
-            </button>
-          </div>
-          <div className="text-[10px] text-slate-400 truncate">
-            Includes Top {topKeyframes.length} High-Confidence Frames
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenDoctorReport}
+            data-testid="stage-open-report-reader-btn"
+            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            Doctor Report (PDF &amp; JSON)
+          </button>
+          <button
+            type="button"
+            onClick={onExportClientPdf}
+            disabled={isGeneratingPdf}
+            data-testid="stage-download-pdf-btn"
+            className="px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>{isGeneratingPdf ? 'Exporting...' : 'Export PDF'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Video Diagnostic Canvas */}
-      <div className="flex flex-col bg-[#0B101B] border border-slate-800/90 rounded-xl overflow-hidden shadow-xl">
-        {/* Stage Header Bar */}
-        <div className="px-4 py-2.5 border-b border-slate-800/90 bg-slate-900/80 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap">
-              {jobResult.job_id}
-            </span>
-            <h2 className="text-sm font-semibold text-slate-100 truncate max-w-[260px] sm:max-w-md">
-              {jobResult.input_video.filename}
-            </h2>
-            {jobResult.video_integrity_verification.integrity_verified && (
-              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800/50 px-2 py-0.5 rounded whitespace-nowrap">
-                <CheckCircle2 className="w-3 h-3" />
-                {totalFrames}/{totalFrames} Frames Synchronized
+      {/* =====================================================================
+          PAGE 1: ENHANCE WIPER (REMINI-STYLE DIRECT SLIDING ON CANVAS)
+      ===================================================================== */}
+      {activeSubPage === 'enhance_wiper' && (
+        <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80">
+            <div className="flex items-center gap-2.5">
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Enhance Wiper — Slide Directly on Image/Video
               </span>
+              <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+                Before {wipePercent}% / After {100 - wipePercent}%
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAiOverlayOnWipe((v) => !v)}
+                data-testid="toggle-wiper-ai-overlay"
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                  showAiOverlayOnWipe
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                }`}
+              >
+                {showAiOverlayOnWipe ? 'AI Detections: Shown' : 'Clean Enhanced Only'}
+              </button>
+
+              {onOpenZoomModal && (
+                <button
+                  type="button"
+                  data-testid="wiper-open-zoom-btn"
+                  onClick={() =>
+                    onOpenZoomModal({
+                      type: 'video',
+                      src: wipeRightUrl,
+                      title: showAiOverlayOnWipe
+                        ? 'AI-Annotated & Enhanced Ultrasound Video'
+                        : 'Speckle-Denoised Enhanced Ultrasound Video',
+                      subtitle: `${jobResult.input_video.resolution} · ${fps} FPS · Click +/- or scroll to zoom`,
+                      badgeText: `PSNR ${enh.mean_psnr_db} dB`,
+                      downloadFilename: showAiOverlayOnWipe
+                        ? 'annotated_video.mp4'
+                        : 'enhanced_video.mp4',
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg bg-[#0F172A] dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>Popup &amp; Zoom</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-6 bg-[#080C14] flex flex-col items-center">
+            {/* Remini-style interactive canvas — NO top wipe slider bar */}
+            <div
+              ref={wiperContainerRef}
+              data-testid="remini-wiper-canvas"
+              onPointerDown={handleWiperPointerDown}
+              onPointerMove={handleWiperPointerMove}
+              onPointerUp={handleWiperPointerUp}
+              onPointerCancel={handleWiperPointerUp}
+              className="relative aspect-[4/3] max-w-[660px] w-full mx-auto bg-black rounded-xl overflow-hidden border border-slate-800 select-none shadow-xl cursor-ew-resize touch-none"
+            >
+              {/* Right Layer: Enhanced / Annotated After Video */}
+              <video
+                ref={rightWipeRef}
+                src={wipeRightUrl}
+                className="w-full h-full object-contain pointer-events-none"
+                playsInline
+                muted
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={(e) => {
+                  if (e.currentTarget.duration && Number.isFinite(e.currentTarget.duration)) {
+                    setDuration(e.currentTarget.duration);
+                  }
+                }}
+                onEnded={() => setIsPlaying(false)}
+              />
+
+              {/* Left Clipped Layer: Original Before Video */}
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{ clipPath: `inset(0 ${100 - wipePercent}% 0 0)` }}
+              >
+                <video
+                  ref={origWipeRef}
+                  src={origVideoUrl}
+                  className="w-full h-full object-contain pointer-events-none"
+                  playsInline
+                  muted
+                />
+              </div>
+
+              {/* Remini-Style Vertical Divider & Touch Handle */}
+              <div
+                data-testid="remini-wiper-handle"
+                className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(20,184,166,0.9)] pointer-events-none"
+                style={{ left: `${wipePercent}%` }}
+              >
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white text-slate-950 border-2 border-teal-500 flex items-center justify-center shadow-xl">
+                  <MoveHorizontal className="w-5 h-5 text-slate-900" />
+                </div>
+              </div>
+
+              {/* Before / After Corner Badges */}
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-slate-950/85 border border-slate-700 text-xs font-semibold text-slate-200 pointer-events-none">
+                Before (Original)
+              </div>
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-teal-950/90 border border-teal-500/50 text-xs font-semibold text-teal-200 pointer-events-none">
+                After ({showAiOverlayOnWipe ? 'Enhanced + AI' : 'Enhanced'})
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          PAGE 2: SIDE-BY-SIDE COMPARISON (CLICK ANY IMAGE TO POPUP & ZOOM)
+      ===================================================================== */}
+      {activeSubPage === 'side_by_side' && (
+        <div
+          data-testid="dedicated-side-by-side-page"
+          className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xs space-y-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Side-by-Side Frame Comparison (Original vs. Enhanced &amp; AI Annotated)
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Click any image below to open in full popup view with Zoom In and Zoom Out.
+              </p>
+            </div>
+
+            {topKeyframes.length > 1 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {topKeyframes.map((kf, idx) => (
+                  <button
+                    key={kf.frame_number}
+                    type="button"
+                    onClick={() => setSelectedSideBySideIdx(idx)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition-colors cursor-pointer ${
+                      selectedSideBySideIdx === idx
+                        ? 'bg-[#0F172A] text-white dark:bg-sky-500 dark:text-slate-950 border-slate-900 dark:border-sky-500'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Frame #{kf.frame_number} ({Math.round((kf.max_confidence || 0) * 100)}%)
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Display Mode Selector */}
-          <div className="flex items-center gap-1 bg-slate-950/90 p-1 rounded-lg border border-slate-800 overflow-x-auto">
-            {(
-              [
-                { id: 'quad', label: 'Quad Monitor' },
-                { id: 'split_wipe', label: 'Old vs. Enhanced Wiper' },
-                { id: 'annotated', label: 'AI-Annotated MP4' },
-                { id: 'enhanced', label: 'Enhanced MP4' },
-                { id: 'comparison', label: 'Side-by-Side MP4' },
-              ] as { id: StageViewMode; label: string }[]
-            ).map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => {
-                  setIsPlaying(false);
-                  setViewMode(mode.id);
-                }}
-                data-testid={`view-mode-${mode.id}`}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  viewMode === mode.id
-                    ? 'bg-cyan-400 text-slate-950 font-semibold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+          {activeSideBySideFrame && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Synchronized Dual Side-by-Side Composite */}
+              <div
+                data-testid="side-by-side-zoom-trigger"
+                onClick={() =>
+                  onOpenZoomModal?.({
+                    type: 'image',
+                    src: `${activeSideBySideFrame.comparison_url}?t=${jobResult.job_id}`,
+                    title: `Side-by-Side Comparison — Frame #${activeSideBySideFrame.frame_number}`,
+                    subtitle: `Timestamp ${activeSideBySideFrame.timestamp_sec}s · Peak Confidence ${(
+                      (activeSideBySideFrame.max_confidence || 0) * 100
+                    ).toFixed(1)}%`,
+                    badgeText: 'Original vs. Enhanced',
+                    downloadFilename: activeSideBySideFrame.comparison_filename,
+                  })
+                }
+                className="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 cursor-pointer"
               >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Viewport Stage */}
-        <div className="p-3 bg-[#060911]">
-          {viewMode === 'quad' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-              {/* Left 6 cols: Synchronized Original vs AI-Annotated Video */}
-              <div className="lg:col-span-6 relative rounded-lg overflow-hidden border border-slate-800 bg-black flex flex-col">
-                <div className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span className="font-medium text-slate-200">
-                      Synchronized Original B-Mode vs. AI-Annotated Stream
-                    </span>
-                  </div>
-                  <span className="font-mono text-[11px] text-slate-400">
-                    Output C
+                <div className="px-3.5 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-200">
+                  <span className="font-semibold">
+                    Original (Left) vs. Enhanced AI (Right) — Frame #{activeSideBySideFrame.frame_number}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-sky-400 font-semibold">
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    Click to Zoom
                   </span>
                 </div>
-                <div className="relative aspect-[8/3] bg-black flex items-center justify-center">
-                  <video
-                    ref={comparisonRef}
-                    src={`${jobResult.exports.videos.comparison_video.url}?t=${jobResult.job_id}`}
-                    className="w-full h-full object-contain"
-                    playsInline
-                    muted
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={(e) => {
-                      if (e.currentTarget.duration && Number.isFinite(e.currentTarget.duration)) {
-                        setDuration(e.currentTarget.duration);
-                      }
-                    }}
-                    onEnded={() => setIsPlaying(false)}
-                    data-testid="video-comparison"
+                <div className="aspect-[8/3] flex items-center justify-center p-2 bg-black">
+                  <img
+                    src={`${activeSideBySideFrame.comparison_url}?t=${jobResult.job_id}`}
+                    alt={`Side-by-side comparison frame ${activeSideBySideFrame.frame_number}`}
+                    className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform"
                   />
                 </div>
               </div>
 
-              {/* Right 6 cols: AI-Annotated + Enhanced Streams */}
-              <div className="lg:col-span-6 grid grid-cols-2 gap-3">
-                <div className="relative rounded-lg overflow-hidden border border-cyan-500/30 bg-black flex flex-col">
-                  <div className="px-2.5 py-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
-                      <span className="font-medium text-cyan-200 truncate">
-                        AI-Annotated + Ruler
-                      </span>
-                    </div>
-                    <span className="font-mono text-[10px] text-cyan-300/80 shrink-0">
-                      Output B
-                    </span>
-                  </div>
-                  <div className="relative aspect-[4/3] bg-black flex items-center justify-center">
-                    <video
-                      ref={annotatedRef}
-                      src={`${jobResult.exports.videos.annotated_video.url}?t=${jobResult.job_id}`}
-                      className="w-full h-full object-contain"
-                      playsInline
-                      muted
-                      data-testid="video-annotated"
-                    />
-                  </div>
+              {/* High-Resolution Enhanced Annotated Frame */}
+              <div
+                data-testid="enhanced-frame-zoom-trigger"
+                onClick={() =>
+                  onOpenZoomModal?.({
+                    type: 'image',
+                    src: `${activeSideBySideFrame.url}?t=${jobResult.job_id}`,
+                    title: `Enhanced & AI-Annotated Ultrasound — Frame #${activeSideBySideFrame.frame_number}`,
+                    subtitle: `${activeSideBySideFrame.label} · Timestamp ${activeSideBySideFrame.timestamp_sec}s`,
+                    badgeText: `Score ${((activeSideBySideFrame.max_confidence || 0) * 100).toFixed(1)}%`,
+                    downloadFilename: activeSideBySideFrame.filename,
+                  })
+                }
+                className="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 cursor-pointer"
+              >
+                <div className="px-3.5 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-200">
+                  <span className="font-semibold">
+                    Enhanced &amp; AI-Annotated Detail — Frame #{activeSideBySideFrame.frame_number}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-teal-400 font-semibold">
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    Click to Zoom
+                  </span>
                 </div>
-
-                <div className="relative rounded-lg overflow-hidden border border-emerald-500/30 bg-black flex flex-col">
-                  <div className="px-2.5 py-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Sparkles className="w-3 h-3 text-emerald-400 shrink-0" />
-                      <span className="font-medium text-emerald-200 truncate">
-                        Despeckled &amp; CLAHE
-                      </span>
-                    </div>
-                    <span className="font-mono text-[10px] text-emerald-300/80 shrink-0">
-                      Output A
-                    </span>
-                  </div>
-                  <div className="relative aspect-[4/3] bg-black flex items-center justify-center">
-                    <video
-                      ref={enhancedRef}
-                      src={`${jobResult.exports.videos.enhanced_video.url}?t=${jobResult.job_id}`}
-                      className="w-full h-full object-contain"
-                      playsInline
-                      muted
-                      data-testid="video-enhanced"
-                    />
-                  </div>
+                <div className="aspect-[4/3] max-h-[280px] mx-auto flex items-center justify-center p-2 bg-black">
+                  <img
+                    src={`${activeSideBySideFrame.url}?t=${jobResult.job_id}`}
+                    alt={`Enhanced frame ${activeSideBySideFrame.frame_number}`}
+                    className="w-full h-full object-contain group-hover:scale-[1.02] transition-transform"
+                  />
                 </div>
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {viewMode === 'split_wipe' && (
-            <div className="max-w-3xl mx-auto flex flex-col gap-3">
-              {/* Top Wipe Split Slider Bar (Controls the Wiper Position) */}
-              <div className="rounded-xl bg-slate-900/95 border border-cyan-500/40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <SplitSquareHorizontal className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span className="text-xs font-semibold text-slate-100">
-                    Top Wipe Split Slider (Old Original vs. Enhanced)
-                  </span>
-                </div>
+      {/* =====================================================================
+          PAGE 3: SIDE-BY-SIDE VIDEO COMPARISON
+      ===================================================================== */}
+      {activeSubPage === 'side_by_side_video' && (
+        <div
+          data-testid="dedicated-side-by-side-video-page"
+          className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs"
+        >
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Synchronized Side-by-Side Video Comparison (Original vs. Enhanced AI)
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Frame-locked dual video stream ({jobResult.input_video.resolution} @ {fps} FPS)
+              </p>
+            </div>
 
-                <div className="flex flex-1 max-w-sm items-center gap-2.5">
-                  <span className="text-[11px] font-mono text-amber-300 whitespace-nowrap">
-                    Old: {wipePercent}%
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={wipePercent}
-                    onChange={(e) => setWipePercent(Number(e.target.value))}
-                    aria-label="Top wipe split slider"
-                    data-testid="top-wipe-split-slider"
-                    className="flex-1 h-2 bg-slate-800 rounded-lg accent-cyan-400 cursor-pointer"
-                  />
-                  <span className="text-[11px] font-mono text-cyan-300 whitespace-nowrap">
-                    Enhanced: {100 - wipePercent}%
-                  </span>
-                </div>
-
+            <div className="flex items-center gap-2">
+              {onOpenZoomModal && (
                 <button
                   type="button"
-                  onClick={() => setShowAiOverlayOnWipe((v) => !v)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition-colors cursor-pointer whitespace-nowrap ${
-                    showAiOverlayOnWipe
-                      ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400/50'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
+                  data-testid="side-by-side-video-zoom-btn"
+                  onClick={() =>
+                    onOpenZoomModal({
+                      type: 'video',
+                      src: comparisonVideoUrl,
+                      title: 'Side-by-Side Comparison Video (Original vs. Enhanced AI)',
+                      subtitle: `${jobResult.input_video.resolution} · ${fps} FPS · Synchronized Frame-by-Frame`,
+                      badgeText: 'Output C',
+                      downloadFilename: jobResult.exports.videos.comparison_video.filename,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg bg-[#0F172A] dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
-                  {showAiOverlayOnWipe ? 'AI Calipers: ON' : 'AI Calipers: OFF'}
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>Popup &amp; Zoom Video</span>
                 </button>
-              </div>
+              )}
+              <a
+                href={`${jobResult.exports.videos.comparison_video.url}?download=1`}
+                download={jobResult.exports.videos.comparison_video.filename}
+                data-testid="download-comparison-video"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download MP4</span>
+              </a>
+            </div>
+          </div>
 
-              {/* Wiper Canvas (4:3 Edge-to-Edge) */}
-              <div className="relative aspect-[4/3] max-w-[540px] w-full mx-auto bg-black rounded-xl overflow-hidden border border-slate-800 select-none shadow-2xl">
+          <div className="p-4 bg-[#080C14]">
+            <div className="max-w-4xl mx-auto rounded-xl overflow-hidden border border-slate-800 bg-black">
+              <video
+                ref={comparisonRef}
+                src={comparisonVideoUrl}
+                className="w-full aspect-[8/3] object-contain cursor-pointer"
+                playsInline
+                muted
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={() => setIsPlaying(false)}
+                onClick={() =>
+                  onOpenZoomModal?.({
+                    type: 'video',
+                    src: comparisonVideoUrl,
+                    title: 'Side-by-Side Comparison Video (Original vs. Enhanced AI)',
+                    subtitle: `${jobResult.input_video.resolution} · ${fps} FPS`,
+                    badgeText: 'Output C',
+                    downloadFilename: jobResult.exports.videos.comparison_video.filename,
+                  })
+                }
+                data-testid="video-comparison"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          PAGE 4: VIDEO COMPARISON (ENHANCED VIDEO & AI-ANNOTATED VIDEO)
+      ===================================================================== */}
+      {activeSubPage === 'video_comparison' && (
+        <div
+          data-testid="dedicated-video-comparison-page"
+          className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xs space-y-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Enhanced &amp; AI-Annotated Video Streams
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Click any video stream below to open it in the Zoom Popup Inspector.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Output A: Enhanced Video */}
+            <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex flex-col">
+              <div className="px-3.5 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-200">
+                <span className="font-semibold">Enhanced Ultrasound Video (enhanced_video.mp4)</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="zoom-enhanced-video-btn"
+                    onClick={() =>
+                      onOpenZoomModal?.({
+                        type: 'video',
+                        src: enhancedVideoUrl,
+                        title: 'Enhanced Ultrasound Video (Output A)',
+                        subtitle: `PSNR ${enh.mean_psnr_db} dB · SSIM ${enh.mean_ssim}`,
+                        badgeText: 'Output A',
+                        downloadFilename: jobResult.exports.videos.enhanced_video.filename,
+                      })
+                    }
+                    className="px-2 py-1 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <ZoomIn className="w-3 h-3" />
+                    <span>Zoom</span>
+                  </button>
+                  <a
+                    href={`${jobResult.exports.videos.enhanced_video.url}?download=1`}
+                    download={jobResult.exports.videos.enhanced_video.filename}
+                    data-testid="download-enhanced-video"
+                    className="px-2 py-1 rounded bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center gap-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>MP4</span>
+                  </a>
+                </div>
+              </div>
+              <div className="aspect-[4/3] bg-black flex items-center justify-center">
                 <video
-                  ref={rightWipeRef}
-                  src={wipeRightUrl}
-                  className="w-full h-full object-cover pointer-events-none"
+                  ref={enhancedRef}
+                  src={enhancedVideoUrl}
+                  className="w-full h-full object-contain cursor-pointer"
                   playsInline
                   muted
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={() => setIsPlaying(false)}
+                  onClick={() =>
+                    onOpenZoomModal?.({
+                      type: 'video',
+                      src: enhancedVideoUrl,
+                      title: 'Enhanced Ultrasound Video (Output A)',
+                      subtitle: `PSNR ${enh.mean_psnr_db} dB · SSIM ${enh.mean_ssim}`,
+                      badgeText: 'Output A',
+                      downloadFilename: jobResult.exports.videos.enhanced_video.filename,
+                    })
+                  }
+                  data-testid="video-enhanced"
                 />
-                <div
-                  className="absolute inset-0 overflow-hidden pointer-events-none"
-                  style={{ clipPath: `inset(0 ${100 - wipePercent}% 0 0)` }}
-                >
-                  <video
-                    ref={origWipeRef}
-                    src={origVideoUrl}
-                    className="w-full h-full object-cover pointer-events-none"
-                    playsInline
-                    muted
-                  />
-                </div>
-                <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.9)] pointer-events-none"
-                  style={{ left: `${wipePercent}%` }}
-                >
-                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-bold shadow-lg">
-                    &harr;
-                  </div>
-                </div>
-                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-slate-950/90 border border-amber-500/40 text-[10px] font-mono text-amber-300 pointer-events-none">
-                  LEFT: OLD / ORIGINAL SCAN
-                </div>
-                <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-slate-950/90 border border-cyan-500/40 text-[10px] font-mono text-cyan-300 pointer-events-none">
-                  {showAiOverlayOnWipe
-                    ? 'RIGHT: ENHANCED + AI CALIPERS'
-                    : 'RIGHT: ENHANCED CLEAN B-MODE'}
-                </div>
               </div>
             </div>
-          )}
 
-          {viewMode !== 'quad' && viewMode !== 'split_wipe' && (
-            <div className="max-w-4xl mx-auto">
-              <div className="relative rounded-lg overflow-hidden border border-slate-800 bg-black">
-                <div className="px-3 py-2 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-200">
-                    {viewMode === 'annotated' &&
-                      'Output B — AI-Annotated Ultrasound Video (annotated_video.mp4)'}
-                    {viewMode === 'enhanced' &&
-                      'Output A — Speckle-Denoised & Contrast-Enhanced Video (enhanced_video.mp4)'}
-                    {viewMode === 'comparison' &&
-                      'Output C — Side-by-Side Synchronized Comparison Video (comparison_video.mp4)'}
-                  </span>
+            {/* Output B: AI-Annotated Video */}
+            <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex flex-col">
+              <div className="px-3.5 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs text-slate-200">
+                <span className="font-semibold">
+                  AI-Annotated Ultrasound Video (annotated_video.mp4)
+                </span>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setViewMode('quad')}
-                    className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>Return to Quad Monitor</span>
-                  </button>
-                </div>
-                <div className="aspect-video max-h-[420px] w-full bg-black flex items-center justify-center">
-                  <video
-                    src={
-                      viewMode === 'annotated'
-                        ? `${jobResult.exports.videos.annotated_video.url}?t=${jobResult.job_id}`
-                        : viewMode === 'enhanced'
-                        ? `${jobResult.exports.videos.enhanced_video.url}?t=${jobResult.job_id}`
-                        : `${jobResult.exports.videos.comparison_video.url}?t=${jobResult.job_id}`
+                    data-testid="zoom-annotated-video-btn"
+                    onClick={() =>
+                      onOpenZoomModal?.({
+                        type: 'video',
+                        src: annotatedVideoUrl,
+                        title: 'AI-Annotated Ultrasound Video (Output B)',
+                        subtitle: `${activeFindingFrames} frames with regions above threshold`,
+                        badgeText: 'Output B',
+                        downloadFilename: jobResult.exports.videos.annotated_video.filename,
+                      })
                     }
-                    controls
-                    autoPlay
-                    loop
-                    className="w-full h-full object-contain"
-                  />
+                    className="px-2 py-1 rounded bg-teal-500/20 text-teal-300 border border-teal-500/40 font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <ZoomIn className="w-3 h-3" />
+                    <span>Zoom</span>
+                  </button>
+                  <a
+                    href={`${jobResult.exports.videos.annotated_video.url}?download=1`}
+                    download={jobResult.exports.videos.annotated_video.filename}
+                    data-testid="download-annotated-video"
+                    className="px-2 py-1 rounded bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center gap-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>MP4</span>
+                  </a>
                 </div>
               </div>
+              <div className="aspect-[4/3] bg-black flex items-center justify-center">
+                <video
+                  ref={annotatedRef}
+                  src={annotatedVideoUrl}
+                  className="w-full h-full object-contain cursor-pointer"
+                  playsInline
+                  muted
+                  onClick={() =>
+                    onOpenZoomModal?.({
+                      type: 'video',
+                      src: annotatedVideoUrl,
+                      title: 'AI-Annotated Ultrasound Video (Output B)',
+                      subtitle: `${activeFindingFrames} frames with regions above threshold`,
+                      badgeText: 'Output B',
+                      downloadFilename: jobResult.exports.videos.annotated_video.filename,
+                    })
+                  }
+                  data-testid="video-annotated"
+                />
+              </div>
             </div>
-          )}
+          </div>
         </div>
+      )}
 
-        {/* Synchronized Playback Transport & Frame Confidence Scrubber */}
-        <div className="px-4 py-3 bg-slate-900/90 border-t border-slate-800/90 flex flex-col gap-2.5">
+      {/* =====================================================================
+          PAGE 5: TOP CLEAR / HIGH-CONFIDENCE FRAMES (CLICK TO POPUP & ZOOM)
+      ===================================================================== */}
+      {activeSubPage === 'top_frames' && (
+        <div
+          data-testid="dedicated-top-frames-page"
+          className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 shadow-xs space-y-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Top {topKeyframes.length} Clear &amp; High-Confidence Ultrasound Frames
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Click any enhanced frame to open in popup modal and zoom in/out.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">
+                Frames Count:
+              </span>
+              {[2, 4, 6, 8, 12].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onChangeTopFramesCount(n)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold border transition-colors cursor-pointer ${
+                    topFramesCount === n
+                      ? 'bg-[#0F172A] text-white dark:bg-sky-500 dark:text-slate-950 border-slate-900 dark:border-sky-500'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  Top {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {topKeyframes.map((kf, index) => (
+              <div
+                key={kf.frame_number}
+                data-testid={`top-frame-card-${index}`}
+                onClick={() =>
+                  onOpenZoomModal?.({
+                    type: 'image',
+                    src: `${kf.url}?t=${jobResult.job_id}`,
+                    title: `Top Clear Frame #${kf.frame_number} (${kf.timestamp_sec}s)`,
+                    subtitle: kf.label,
+                    badgeText: `Confidence ${((kf.max_confidence || 0) * 100).toFixed(1)}%`,
+                    downloadFilename: kf.filename,
+                  })
+                }
+                className="group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 hover:border-sky-500 transition-all cursor-pointer flex flex-col shadow-2xs"
+              >
+                <div className="relative aspect-[4/3] bg-black overflow-hidden">
+                  <img
+                    src={`${kf.url}?t=${jobResult.job_id}`}
+                    alt={kf.label}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-slate-950/85 text-white font-mono text-[11px] font-semibold">
+                    Frame #{kf.frame_number} · {kf.timestamp_sec}s
+                  </div>
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-teal-500/90 text-slate-950 font-mono text-[11px] font-bold">
+                    {((kf.max_confidence || 0) * 100).toFixed(1)}%
+                  </div>
+                  <div className="absolute bottom-2 right-2 px-2.5 py-1 rounded-md bg-slate-950/85 text-sky-300 text-[11px] font-semibold flex items-center gap-1 opacity-90 group-hover:opacity-100">
+                    <ZoomIn className="w-3 h-3" />
+                    <span>Click to Zoom</span>
+                  </div>
+                </div>
+                <div className="p-3 flex items-center justify-between gap-2 text-xs">
+                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate">
+                    {kf.label}
+                  </span>
+                  <a
+                    href={`${kf.url}?download=1`}
+                    download={kf.filename}
+                    onClick={(e) => e.stopPropagation()}
+                    className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-mono text-[11px] shrink-0"
+                  >
+                    PNG
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SYNCHRONIZED PLAYBACK CONTROLS & TIMELINE BAR (FOR VIDEO VIEWS) */}
+      {(activeSubPage === 'enhance_wiper' ||
+        activeSubPage === 'side_by_side_video' ||
+        activeSubPage === 'video_comparison') && (
+        <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-xs flex flex-col gap-2.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={togglePlayPause}
                 data-testid="playback-toggle-btn"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F172A] hover:bg-slate-800 dark:bg-sky-500 dark:hover:bg-sky-400 text-white dark:text-slate-950 font-semibold text-xs transition-colors cursor-pointer"
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                <span>{isPlaying ? 'Pause Streams' : 'Play Synchronized'}</span>
+                <span>{isPlaying ? 'Pause' : 'Play Video'}</span>
               </button>
+
               <button
                 type="button"
                 onClick={handleRestart}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
                 title="Restart at Frame 0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
 
-              <div className="flex items-center gap-1 ml-1 bg-slate-950 px-2 py-1 rounded border border-slate-800">
-                <SlidersHorizontal className="w-3 h-3 text-slate-400" />
-                {[0.5, 1.0].map((rate) => (
+              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                {[0.5, 1.0, 1.5].map((rate) => (
                   <button
                     key={rate}
                     type="button"
                     onClick={() => handleChangeSpeed(rate)}
                     className={`px-1.5 py-0.5 rounded text-[11px] font-mono cursor-pointer ${
                       playbackRate === rate
-                        ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-slate-900 text-white dark:bg-sky-500/20 dark:text-sky-300 font-semibold'
+                        : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     {rate}x
                   </button>
                 ))}
               </div>
-
-              {currentFrameEntry && (
-                <div className="hidden xl:flex items-center gap-2 ml-2 px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-[11px] font-mono">
-                  <span className="text-slate-400">Live Frame:</span>
-                  <span className="text-slate-200">
-                    #{currentFrameEntry.frame_number} (
-                    {formatTimestampMillis(currentFrameEntry.timestamp_sec)})
-                  </span>
-                  <span className="text-slate-600">|</span>
-                  <span
-                    className={
-                      currentFrameEntry.detection_count > 0
-                        ? 'text-cyan-300 font-semibold'
-                        : 'text-slate-400'
-                    }
-                  >
-                    {currentFrameEntry.detection_count > 0
-                      ? `${currentFrameEntry.detections[0].category} (${(
-                          currentFrameEntry.max_confidence * 100
-                        ).toFixed(1)}%)`
-                      : 'Below Threshold'}
-                  </span>
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-mono tabular-nums">
-              <span className="text-slate-300">
-                Frame <strong className="text-cyan-300">{currentFrameNumber + 1}</strong> /{' '}
-                {totalFrames}
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono tabular-nums text-slate-700 dark:text-slate-300">
+              <span>
+                Frame{' '}
+                <strong className="text-slate-900 dark:text-sky-300">
+                  {currentFrameNumber + 1}
+                </strong>{' '}
+                / {totalFrames}
               </span>
-              <span className="text-slate-400">
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span>
                 {formatTimestampMillis(currentTime)} / {formatTimestampMillis(duration)}
               </span>
+              {currentFrameEntry && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
+                  <span className="text-teal-700 dark:text-teal-300 font-semibold">
+                    {currentFrameEntry.detection_count > 0
+                      ? `Confidence: ${(currentFrameEntry.max_confidence * 100).toFixed(1)}%`
+                      : 'Clear Frame'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Interactive Frame Confidence Bar Scrubber */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
-              <span>
-                Frame-by-Frame Anomaly Confidence Scrubber (Click any frame bar to inspect)
-              </span>
-              <span className="font-mono text-cyan-300">
-                Peak: {(sum.peak_raw_confidence * 100).toFixed(1)}% (Frame #
-                {sum.peak_confidence_frame})
-              </span>
-            </div>
-            <div
-              className="h-8 bg-slate-950 rounded-lg border border-slate-800 p-1 flex items-end gap-[2px] overflow-hidden"
-              role="group"
-              aria-label="Frame confidence timeline"
-            >
-              {filteredTimeline.map((pt) => {
-                const isCurrent = pt.frame_number === currentFrameNumber;
-                const heightPct = Math.max(
-                  14,
-                  Math.min(100, Math.round(pt.max_confidence * 100))
-                );
-                return (
-                  <button
-                    key={pt.frame_number}
-                    type="button"
-                    onClick={() => {
-                      onSelectFrame(pt.frame_number);
-                      seekAllVideos(pt.timestamp_sec);
-                    }}
-                    title={`Frame #${pt.frame_number} (${pt.timestamp_sec}s) — Score: ${(
-                      pt.max_confidence * 100
-                    ).toFixed(1)}%`}
-                    className={`flex-1 rounded-t transition-all cursor-pointer ${
-                      isCurrent
-                        ? 'bg-amber-400 ring-1 ring-amber-300'
-                        : pt.detection_count > 0
-                        ? 'bg-cyan-400/80 hover:bg-cyan-300'
-                        : 'bg-slate-700/70 hover:bg-slate-600'
-                    }`}
-                    style={{ height: `${heightPct}%` }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Direct Export Bar: Videos + Doctor PDF + Doctor JSON + CSV */}
-        <div className="px-4 py-2.5 bg-[#080C14] border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
-            Direct Clinical Artifacts &amp; Doctor Exports:
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={onExportClientPdf}
-              disabled={isGeneratingPdf}
-              data-testid="download-illustrated-pdf-btn"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              <span>
-                {isGeneratingPdf ? 'Generating PDF...' : 'Download Illustrated PDF (.pdf)'}
-              </span>
-            </button>
-            {jobResult.exports.reports.pdf && (
-              <a
-                href={`${jobResult.exports.reports.pdf.url}?download=1`}
-                download={jobResult.exports.reports.pdf.filename}
-                data-testid="download-server-pdf"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-cyan-950/60 hover:bg-cyan-900/70 text-cyan-200 border border-cyan-700/50 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>radiologist_clinical_report.pdf</span>
-              </a>
-            )}
-            <a
-              href={`${jobResult.exports.reports.json.url}?download=1`}
-              download={jobResult.exports.reports.json.filename}
-              data-testid="download-report-json"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-950/60 hover:bg-amber-900/70 text-amber-200 border border-amber-700/50 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>detection_report.json</span>
-            </a>
-            <a
-              href={`${jobResult.exports.reports.csv.url}?download=1`}
-              download={jobResult.exports.reports.csv.filename}
-              data-testid="download-report-csv"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>detection_report.csv</span>
-            </a>
-            <a
-              href={`${jobResult.exports.videos.annotated_video.url}?download=1`}
-              download={jobResult.exports.videos.annotated_video.filename}
-              data-testid="download-annotated-video"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>annotated_video.mp4</span>
-            </a>
-            <a
-              href={`${jobResult.exports.videos.enhanced_video.url}?download=1`}
-              download={jobResult.exports.videos.enhanced_video.filename}
-              data-testid="download-enhanced-video"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>enhanced_video.mp4</span>
-            </a>
-            <a
-              href={`${jobResult.exports.videos.comparison_video.url}?download=1`}
-              download={jobResult.exports.videos.comparison_video.filename}
-              data-testid="download-comparison-video"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono transition-colors whitespace-nowrap shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>comparison_video.mp4</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Top N High-Confidence Annotated Keyframes Strip */}
-      <div className="bg-[#0E1524] border border-slate-800/90 rounded-xl p-3.5 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-              Top {topKeyframes.length} High-Confidence Annotated Frames (Ranked by AI Score)
-            </h3>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Inline Frame Count Selector */}
-            <div className="flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-              <span className="text-[11px] text-slate-400 mr-1">Frames:</span>
-              {[2, 4, 6, 8, 12].map((count) => (
+          <div
+            className="h-6 bg-slate-100 dark:bg-slate-950 rounded-md border border-slate-200 dark:border-slate-800 p-1 flex items-end gap-[2px] overflow-hidden"
+            role="group"
+            aria-label="Frame timeline scrubber"
+          >
+            {filteredTimeline.map((pt) => {
+              const isCurrent = pt.frame_number === currentFrameNumber;
+              const heightPct = Math.max(
+                20,
+                Math.min(100, Math.round(pt.max_confidence * 100))
+              );
+              return (
                 <button
-                  key={count}
+                  key={pt.frame_number}
                   type="button"
-                  onClick={() => onChangeTopFramesCount(count)}
-                  data-testid={`results-top-frames-btn-${count}`}
-                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-semibold cursor-pointer ${
-                    topFramesCount === count
-                      ? 'bg-cyan-400 text-slate-950'
-                      : 'text-slate-400 hover:text-white'
+                  onClick={() => {
+                    onSelectFrame(pt.frame_number);
+                    seekAllVideos(pt.timestamp_sec);
+                  }}
+                  className={`flex-1 rounded-t transition-colors cursor-pointer ${
+                    isCurrent
+                      ? 'bg-amber-500 dark:bg-amber-400'
+                      : pt.detection_count > 0
+                      ? 'bg-teal-600 dark:bg-sky-400/85'
+                      : 'bg-slate-300 dark:bg-slate-700'
                   }`}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={onOpenFullKeyframes}
-              className="text-xs text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer"
-            >
-              Full Frame Inspector &rarr;
-            </button>
-            <span className="text-slate-700">|</span>
-            <button
-              type="button"
-              onClick={onOpenDoctorReport}
-              className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-medium cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Open Doctor PDF &amp; JSON Report</span>
-            </button>
+                  style={{ height: `${heightPct}%` }}
+                />
+              );
+            })}
           </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {topKeyframes.map((kf, rankIdx) => {
-            const tl = filteredTimeline[kf.frame_number];
-            const score = kf.max_confidence ?? tl?.max_confidence ?? 0;
-            const firstDet = tl?.detections?.[0];
-            const caliperStr = firstDet
-              ? `${(firstDet.bbox_xywh[2] * 0.28).toFixed(1)} × ${(
-                  firstDet.bbox_xywh[3] * 0.28
-                ).toFixed(1)} mm`
-              : 'Baseline Scan';
-            const isSel = kf.frame_number === selectedFrame;
+      {/* CLEAN SUMMARY STRIP */}
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-5">
+          <span className="inline-flex items-center gap-1.5 font-semibold text-teal-700 dark:text-teal-400">
+            <CheckCircle2 className="w-4 h-4" />
+            Enhancement &amp; AI Analysis Complete
+          </span>
+          <span className="font-mono text-slate-600 dark:text-slate-300">
+            PSNR: <strong>{enh.mean_psnr_db} dB</strong> · SSIM: <strong>{enh.mean_ssim}</strong> · Speckle Reduction: <strong>+{enh.speckle_suppression_gain_pct}%</strong>
+          </span>
+          <span className="font-mono text-slate-600 dark:text-slate-300">
+            Detected Frames: <strong>{activeFindingFrames}/{sum.total_frames_processed}</strong> ({candidateCount} cystic, {uncertainCount} uncertain)
+          </span>
+        </div>
 
-            return (
-              <div
-                key={kf.frame_number}
-                onClick={() => {
-                  onSelectFrame(kf.frame_number);
-                  seekAllVideos(kf.timestamp_sec);
-                }}
-                data-testid={`high-conf-frame-card-${rankIdx}`}
-                className={`rounded-lg overflow-hidden border bg-[#07090E] cursor-pointer transition-all flex flex-col justify-between ${
-                  isSel
-                    ? 'border-cyan-400 ring-1 ring-cyan-400/50'
-                    : 'border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="px-2.5 py-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-slate-200 font-semibold">
-                    #{rankIdx + 1} · Frame {kf.frame_number} ({kf.timestamp_sec}s)
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">
-                    {(score * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="aspect-[4/3] bg-black">
-                  <img
-                    src={`${kf.url}?t=${jobResult.job_id}`}
-                    alt={kf.label}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div className="px-2.5 py-1.5 bg-[#0B0E17] border-t border-slate-800 flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-slate-300 truncate">{caliperStr}</span>
-                  <a
-                    href={`${kf.url}?download=1`}
-                    download={kf.filename}
-                    onClick={(e) => e.stopPropagation()}
-                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium flex items-center gap-1"
-                  >
-                    <Download className="w-3 h-3" />
-                    <span>PNG</span>
-                  </a>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`${jobResult.exports.reports.json.url}?download=1`}
+            download={jobResult.exports.reports.json.filename}
+            data-testid="download-report-json"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-[11px]"
+          >
+            <Download className="w-3 h-3" />
+            <span>JSON</span>
+          </a>
+          <a
+            href={`${jobResult.exports.reports.csv.url}?download=1`}
+            download={jobResult.exports.reports.csv.filename}
+            data-testid="download-report-csv"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-[11px]"
+          >
+            <Download className="w-3 h-3" />
+            <span>CSV</span>
+          </a>
         </div>
       </div>
     </div>

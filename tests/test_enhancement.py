@@ -44,6 +44,17 @@ class TestEnhancement(unittest.TestCase):
         # Blended between 100 and 106 -> strictly between 100 and 106
         self.assertTrue(100 < out2[0] < 106)
 
+    def test_aberdeen_fuzzy_adf_clahe_enhances_contrast_and_edges(self) -> None:
+        enhancer = UltrasoundEnhancer(method="aberdeen_fuzzy_adf_clahe", strength=0.78, clahe_clip_limit=2.2)
+        enh, sat_out, sat2_out = enhancer.enhance_frame(self.noisy_frame, self.w, self.h)
+        q_out = assess_frame_quality(enh, sat_out, sat2_out, self.w, self.h)
+        self.assertEqual(len(enh), self.w * self.h)
+        metrics = compute_psnr_and_ssim(self.noisy_frame, enh, self.w, self.h)
+        self.assertGreater(metrics["psnr_db"], 15.0)
+        self.assertGreater(metrics["ssim"], 0.65)
+        self.assertGreater(metrics["epi"], 0.75)
+        self.assertGreater(q_out["enl_speckle_index"], 10.0)
+
 
 if __name__ == "__main__":
     unittest.main()
